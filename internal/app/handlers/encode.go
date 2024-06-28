@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"github.com/northmule/shorturl/internal/app/services"
 	"net/http"
 )
 
+// EncodeHandler обработчик получения оригинальной ссылки из короткой
 func EncodeHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "expected get request", http.StatusBadRequest)
@@ -17,6 +19,19 @@ func EncodeHandler(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusTemporaryRedirect)
-	// todo декодировать id и вренуть
-	res.Write([]byte("https:ya.ru"))
+
+	shortUrlService := services.ShortUrlService{
+		ShortUrl: id,
+	}
+	urlValue, err := shortUrlService.EncodeShortUrl()
+	if err != nil {
+		http.Error(res, "error encode shortUrl", http.StatusBadRequest)
+		return
+	}
+
+	_, err = res.Write([]byte(urlValue))
+	if err != nil {
+		http.Error(res, "error write data", http.StatusBadRequest)
+		return
+	}
 }
