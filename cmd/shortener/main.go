@@ -17,5 +17,5 @@ func run() error {
 	mux.HandleFunc("/", handlers.DecodeHandler)
 	mux.HandleFunc(`/{id}`, handlers.EncodeHandler)
 
-	return http.ListenAndServe(configs.ServerUrl, mux)
+	return http.ListenAndServe(configs.ServerURL, mux)
 }

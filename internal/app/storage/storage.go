@@ -9,7 +9,7 @@ type Storage interface {
 	Get(id string) (string, error)
 	Update(id string, value string) error
 	Add(value string) error
-	FindByShortUrl(shortUrl string) models.Url
+	FindByShortURL(shortURL string) models.URL
 }
 
 // DatabaseStorage Реализация хранения в виде структуры
@@ -31,7 +31,7 @@ func (d *DatabaseStorage) Add(value string) error {
 	return nil
 }
 
-// FindByShortUrl поиск по короткой ссылке
-func (d *DatabaseStorage) FindByShortUrl(shortUrl string) error {
+// FindByShortURL поиск по короткой ссылке
+func (d *DatabaseStorage) FindByShortURL(shortURL string) error {
 	return nil
 }

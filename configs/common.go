@@ -1,3 +1,3 @@
 package configs
 
-const ServerUrl = "localhost:8080"
+const ServerURL = "localhost:8080"

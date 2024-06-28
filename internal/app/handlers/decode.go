@@ -37,16 +37,16 @@ func DecodeHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 
-	shortUrlService := services.ShortUrlService{
-		Url: string(postBody),
+	shortURLService := services.ShortURLService{
+		URL: string(postBody),
 	}
-	shortUrlValue, err := shortUrlService.DecodeUrl()
+	shortURLValue, err := shortURLService.DecodeURL()
 	if err != nil {
 		http.Error(res, "error decode url", http.StatusBadRequest)
 		return
 	}
-	shortUrl := fmt.Sprintf("%s/%s", configs.ServerUrl, shortUrlValue)
-	_, err = res.Write([]byte(shortUrl))
+	shortURL := fmt.Sprintf("%s/%s", configs.ServerURL, shortURLValue)
+	_, err = res.Write([]byte(shortURL))
 	if err != nil {
 		http.Error(res, "error write data", http.StatusBadRequest)
 		return

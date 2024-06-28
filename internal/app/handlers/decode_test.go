@@ -10,8 +10,13 @@ import (
 	"testing"
 )
 
-// TestDecodeHandler тест обработчика для декодирования ссылки
-func TestDecodeHandler(t *testing.T) {
+// TestIteration1Empty Для инкремента1 не должно быть тестов
+func TestIteration1Empty(t *testing.T) {
+	assert.True(t, true)
+}
+
+// TestIteration2_DecodeHandler тест обработчика для декодирования ссылки
+func TestIteration2_DecodeHandler(t *testing.T) {
 	type want struct {
 		code     int
 		response string
@@ -67,13 +72,13 @@ func TestDecodeHandler(t *testing.T) {
 			},
 			want: want{
 				code:     http.StatusCreated,
-				response: fmt.Sprintf("%s/%s", configs.ServerUrl, "e98192e19505472476a49f10388428ab"),
+				response: fmt.Sprintf("%s/%s", configs.ServerURL, "e98192e19505472476a49f10388428ab"),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.request.method, configs.ServerUrl, bytes.NewBufferString(tt.request.body))
+			request := httptest.NewRequest(tt.request.method, configs.ServerURL, bytes.NewBufferString(tt.request.body))
 			request.Header.Set("Content-Type", tt.request.contentType)
 
 			response := httptest.NewRecorder()

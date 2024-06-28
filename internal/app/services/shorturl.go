@@ -7,22 +7,22 @@ import (
 	"github.com/northmule/shorturl/internal/app/storage"
 )
 
-type ShortUrlService struct {
-	Url      string
-	ShortUrl string
+type ShortURLService struct {
+	URL      string
+	ShortURL string
 }
 
-// ShortUrlService вернёт короткий url
-func (s *ShortUrlService) DecodeUrl() (shortUrl string, err error) {
-	algData := md5.Sum([]byte(s.Url)) // todo заменить
+// ShortURLService вернёт короткий url
+func (s *ShortURLService) DecodeURL() (shortURL string, err error) {
+	algData := md5.Sum([]byte(s.URL)) // todo заменить
 	return fmt.Sprintf("%x", algData), nil
 }
 
-// EncodeShortUrl вернёт полный url
-func (s *ShortUrlService) EncodeShortUrl() (shortUrl string, err error) {
-	modelUrl, ok := storage.DatabaseData[s.ShortUrl]
+// EncodeShortURL вернёт полный url
+func (s *ShortURLService) EncodeShortURL() (shortURL string, err error) {
+	modelURL, ok := storage.DatabaseData[s.ShortURL]
 	if !ok {
 		return "", errors.New("short url not found")
 	}
-	return modelUrl.Url, nil
+	return modelURL.URL, nil
 }

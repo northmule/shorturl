@@ -20,10 +20,10 @@ func EncodeHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusTemporaryRedirect)
 
-	shortUrlService := services.ShortUrlService{
-		ShortUrl: id,
+	shortURLService := services.ShortURLService{
+		ShortURL: id,
 	}
-	urlValue, err := shortUrlService.EncodeShortUrl()
+	urlValue, err := shortURLService.EncodeShortURL()
 	if err != nil {
 		http.Error(res, "error encode shortUrl", http.StatusBadRequest)
 		return

@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-// TestEncodeHandler тест обработчика для декодирования ссылки
-func TestEncodeHandler(t *testing.T) {
+// TestIteration2_EncodeHandler тест обработчика для декодирования ссылки
+func TestIteration2_EncodeHandler(t *testing.T) {
 	type want struct {
 		code     int
 		response string
@@ -57,7 +57,7 @@ func TestEncodeHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.request.method, configs.ServerUrl, nil)
+			request := httptest.NewRequest(tt.request.method, configs.ServerURL, nil)
 			request.SetPathValue("id", tt.request.id)
 			response := httptest.NewRecorder()
 
