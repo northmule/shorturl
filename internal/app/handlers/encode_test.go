@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"github.com/northmule/shorturl/configs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +11,9 @@ import (
 
 // TestIteration2_EncodeHandler тест обработчика для декодирования ссылки
 func TestIteration2_EncodeHandler(t *testing.T) {
+	ts := httptest.NewServer(AppRoutes())
+	defer ts.Close()
+
 	type want struct {
 		code     int
 		response string
@@ -26,25 +30,16 @@ func TestIteration2_EncodeHandler(t *testing.T) {
 		{
 			name: "Test #1 - негативный",
 			request: request{
+				id:     "123",
 				method: http.MethodPost,
 			},
 			want: want{
 				code:     http.StatusBadRequest,
-				response: "expected get request\n",
+				response: "method not expect\n",
 			},
 		},
 		{
-			name: "Test #2 - негативный",
-			request: request{
-				method: http.MethodGet,
-			},
-			want: want{
-				code:     http.StatusBadRequest,
-				response: "expected id value\n",
-			},
-		},
-		{
-			name: "Test #3 - позитивный",
+			name: "Test #2 - позитивный",
 			request: request{
 				id:     "e98192e19505472476a49f10388428ab",
 				method: http.MethodGet,
@@ -57,13 +52,19 @@ func TestIteration2_EncodeHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.request.method, configs.ServerURL, nil)
-			request.SetPathValue("id", tt.request.id)
-			response := httptest.NewRecorder()
+			request, err := http.NewRequest(tt.request.method, ts.URL+"/"+tt.request.id, nil)
+			require.NoError(t, err)
 
-			EncodeHandler(response, request)
-			assert.Equal(t, tt.want.code, response.Code, "Не верный код ответа сервера")
-			assert.Equal(t, tt.want.response, response.Body.String(), "Ошибка в значение body")
+			response, err := ts.Client().Do(request)
+			require.NoError(t, err)
+			defer response.Body.Close()
+
+			respBody, err := io.ReadAll(response.Body)
+			stringBody := string(respBody)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.want.code, response.StatusCode, "Не верный код ответа сервера")
+			assert.Equal(t, tt.want.response, stringBody, "Ошибка в значение body")
 		})
 	}
 }

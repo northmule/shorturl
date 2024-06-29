@@ -1,17 +1,14 @@
 package handlers
 
 import (
+	"github.com/go-chi/chi/v5"
 	"github.com/northmule/shorturl/internal/app/services"
 	"net/http"
 )
 
 // EncodeHandler обработчик получения оригинальной ссылки из короткой
 func EncodeHandler(res http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
-		http.Error(res, "expected get request", http.StatusBadRequest)
-		return
-	}
-	id := req.PathValue("id")
+	id := chi.URLParam(req, "id")
 	if id == "" {
 		http.Error(res, "expected id value", http.StatusBadRequest)
 		return

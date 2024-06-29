@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/northmule/shorturl/configs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,6 +19,9 @@ func TestIteration1Empty(t *testing.T) {
 
 // TestIteration2_DecodeHandler тест обработчика для декодирования ссылки
 func TestIteration2_DecodeHandler(t *testing.T) {
+	ts := httptest.NewServer(AppRoutes())
+	defer ts.Close()
+
 	type want struct {
 		code     int
 		response string
@@ -38,7 +43,7 @@ func TestIteration2_DecodeHandler(t *testing.T) {
 			},
 			want: want{
 				code:     http.StatusBadRequest,
-				response: "expected post request\n",
+				response: "method not expect\n",
 			},
 		},
 		{
@@ -78,14 +83,19 @@ func TestIteration2_DecodeHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.request.method, configs.ServerURL, bytes.NewBufferString(tt.request.body))
+			request, err := http.NewRequest(tt.request.method, ts.URL, bytes.NewBufferString(tt.request.body))
+			require.NoError(t, err)
 			request.Header.Set("Content-Type", tt.request.contentType)
+			response, err := ts.Client().Do(request)
+			require.NoError(t, err)
+			defer response.Body.Close()
 
-			response := httptest.NewRecorder()
+			respBody, err := io.ReadAll(response.Body)
+			require.NoError(t, err)
 
-			DecodeHandler(response, request)
-			assert.Equal(t, tt.want.code, response.Code, "Не верный код ответа сервера")
-			assert.Equal(t, tt.want.response, response.Body.String(), "Ошибка в значение body")
+			assert.NotNil(t, respBody)
+			assert.Equal(t, tt.want.code, response.StatusCode, "Не верный код ответа сервера")
+			assert.Equal(t, tt.want.response, string(respBody), "Ошибка в значение body")
 		})
 	}
 }

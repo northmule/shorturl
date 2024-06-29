@@ -11,11 +11,8 @@ func main() {
 		panic(err)
 	}
 }
+
+// run преднастройка
 func run() error {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/", handlers.DecodeHandler)
-	mux.HandleFunc(`/{id}`, handlers.EncodeHandler)
-
-	return http.ListenAndServe(configs.ServerURL, mux)
+	return http.ListenAndServe(configs.ServerURL, handlers.AppRoutes())
 }

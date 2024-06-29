@@ -11,10 +11,6 @@ import (
 
 // DecodeHandler обработчик создания короткой ссылки
 func DecodeHandler(res http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodPost {
-		http.Error(res, "expected post request", http.StatusBadRequest)
-		return
-	}
 	if req.Header.Get("Content-Type") != "text/plain" {
 		http.Error(res, "expected Content-Type: text/plain", http.StatusBadRequest)
 		return
