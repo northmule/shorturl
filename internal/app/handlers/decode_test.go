@@ -3,7 +3,7 @@ package handlers
 import (
 	"bytes"
 	"fmt"
-	"github.com/northmule/shorturl/configs"
+	"github.com/northmule/shorturl/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -77,7 +77,7 @@ func TestIteration2_DecodeHandler(t *testing.T) {
 			},
 			want: want{
 				code:     http.StatusCreated,
-				response: fmt.Sprintf("%s/%s", configs.ServerURL, "e98192e19505472476a49f10388428ab"),
+				response: fmt.Sprintf("%s/%s", config.AppConfig.ServerURL, "e98192e19505472476a49f10388428ab"),
 			},
 		},
 	}

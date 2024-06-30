@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/northmule/shorturl/configs"
+	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/services"
 	"io"
 	"net/http"
@@ -41,7 +41,7 @@ func DecodeHandler(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "error decode url", http.StatusBadRequest)
 		return
 	}
-	shortURL := fmt.Sprintf("%s/%s", configs.ServerURL, shortURLValue)
+	shortURL := fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURLValue)
 	_, err = res.Write([]byte(shortURL))
 	if err != nil {
 		http.Error(res, "error write data", http.StatusBadRequest)

@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/northmule/shorturl/configs"
+	"fmt"
+	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/handlers"
 	"net/http"
 )
@@ -14,5 +15,8 @@ func main() {
 
 // run преднастройка
 func run() error {
-	return http.ListenAndServe(configs.ServerURL, handlers.AppRoutes())
+	config.Init()
+	parseFlags()
+	fmt.Println("Running server on", config.AppConfig.ServerURL)
+	return http.ListenAndServe(config.AppConfig.ServerURL, handlers.AppRoutes())
 }
