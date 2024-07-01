@@ -15,8 +15,10 @@ func main() {
 
 // run преднастройка
 func run() error {
-	config.Init()
-	parseFlags()
-	fmt.Println("Running server on", config.AppConfig.ServerURL)
+	configInit := config.Init()
+	configInit.InitEnvConfig()
+	configInit.InitFlagConfig()
+
+	fmt.Println("Running server on - ", config.AppConfig.ServerURL)
 	return http.ListenAndServe(config.AppConfig.ServerURL, handlers.AppRoutes())
 }
