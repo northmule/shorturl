@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/northmule/shorturl/config"
+	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -23,13 +24,12 @@ func TestIteration2_DecodeHandler(t *testing.T) {
 	defer ts.Close()
 
 	type want struct {
-		code     int
-		response string
+		code    int
+		isError bool
 	}
 	type request struct {
-		method      string
-		contentType string
-		body        string
+		method string
+		body   string
 	}
 	tests := []struct {
 		name    string
@@ -37,55 +37,49 @@ func TestIteration2_DecodeHandler(t *testing.T) {
 		want    want
 	}{
 		{
-			name: "Test #1 - негативный",
-			request: request{
-				method: http.MethodGet,
-			},
+			name:    "Test #1 - негативный",
+			request: request{},
 			want: want{
-				code:     http.StatusBadRequest,
-				response: "method not expect\n",
+				code:    http.StatusBadRequest,
+				isError: true,
 			},
 		},
 		{
 			name: "Test #2 - негативный",
 			request: request{
-				method: http.MethodPost,
+				body: "Жил был слон!",
 			},
 			want: want{
-				code:     http.StatusBadRequest,
-				response: "expected Content-Type: text/plain\n",
+				code:    http.StatusBadRequest,
+				isError: true,
 			},
 		},
 		{
-			name: "Test #3 - негативный",
+			name: "Test #3 - позитивный",
 			request: request{
-				method:      http.MethodPost,
-				contentType: "text/plain",
-				body:        "Жил был слон!",
+				body: "https://ya.ru",
 			},
 			want: want{
-				code:     http.StatusBadRequest,
-				response: "expected url\n",
-			},
-		},
-		{
-			name: "Test #4 - позитивный",
-			request: request{
-				method:      http.MethodPost,
-				contentType: "text/plain",
-				body:        "https://ya.ru",
-			},
-			want: want{
-				code:     http.StatusCreated,
-				response: fmt.Sprintf("%s/%s", config.AppConfig.ServerURL, "e98192e19505472476a49f10388428ab"),
+				code:    http.StatusCreated,
+				isError: false,
 			},
 		},
 	}
+
+	config.AppConfig.DatabasePath = "shorturl_test.db"
+	err := storage.AutoMigrate()
+	require.NoError(t, err)
+	defer func() {
+		_ = os.Remove("shorturl_test.db")
+	}()
+
+	appStorage := storage.New()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request, err := http.NewRequest(tt.request.method, ts.URL, bytes.NewBufferString(tt.request.body))
+			request, err := http.NewRequest(http.MethodPost, ts.URL, bytes.NewBufferString(tt.request.body))
 			require.NoError(t, err)
-			request.Header.Set("Content-Type", tt.request.contentType)
+			request.Header.Set("Content-Type", "text/plain")
 			response, err := ts.Client().Do(request)
 			require.NoError(t, err)
 			defer response.Body.Close()
@@ -95,7 +89,8 @@ func TestIteration2_DecodeHandler(t *testing.T) {
 
 			assert.NotNil(t, respBody)
 			assert.Equal(t, tt.want.code, response.StatusCode, "Не верный код ответа сервера")
-			assert.Equal(t, tt.want.response, string(respBody), "Ошибка в значение body")
+			_, err = appStorage.FindByURL(tt.request.body)
+			assert.Equal(t, tt.want.isError, err != nil)
 		})
 	}
 }

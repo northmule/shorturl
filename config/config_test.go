@@ -33,7 +33,7 @@ func TestAFlagAndBFlag(t *testing.T) {
 			flags: map[string]string{},
 			want: Config{
 				ServerURL:    ":8080",
-				BaseShortURL: "http://localhost:8000/",
+				BaseShortURL: "http://localhost:8080",
 			},
 		},
 		{

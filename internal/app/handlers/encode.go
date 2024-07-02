@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/northmule/shorturl/internal/app/services"
+	appStorage "github.com/northmule/shorturl/internal/app/storage"
 	"net/http"
 )
 
@@ -13,22 +13,14 @@ func EncodeHandler(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "expected id value", http.StatusBadRequest)
 		return
 	}
-
-	res.Header().Set("content-type", "text/plain")
-	res.WriteHeader(http.StatusTemporaryRedirect)
-
-	shortURLService := services.ShortURLService{
-		ShortURL: id,
-	}
-	urlValue, err := shortURLService.EncodeShortURL()
+	appStorage := appStorage.New()
+	modelURL, err := appStorage.FindByShortURL(id)
 	if err != nil {
 		http.Error(res, "error encode shortUrl", http.StatusBadRequest)
 		return
 	}
 
-	_, err = res.Write([]byte(urlValue))
-	if err != nil {
-		http.Error(res, "error write data", http.StatusBadRequest)
-		return
-	}
+	res.Header().Set("content-type", "text/plain")
+	res.Header().Set("Location", modelURL.URL)
+	res.WriteHeader(http.StatusTemporaryRedirect)
 }
