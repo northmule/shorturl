@@ -49,7 +49,7 @@ func DecodeHandler(res http.ResponseWriter, req *http.Request) {
 		ShortURL: shortURLValue,
 		URL:      shortURLService.URL,
 	}
-	err = appStorage.Add(&urlModel)
+	err = appStorage.Add(urlModel)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return

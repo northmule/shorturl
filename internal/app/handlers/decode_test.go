@@ -2,14 +2,12 @@ package handlers
 
 import (
 	"bytes"
-	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 )
 
@@ -65,13 +63,6 @@ func TestIteration2_DecodeHandler(t *testing.T) {
 			},
 		},
 	}
-
-	config.AppConfig.DatabasePath = "shorturl_test.db"
-	err := storage.AutoMigrate()
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Remove("shorturl_test.db")
-	}()
 
 	appStorage := storage.New()
 
