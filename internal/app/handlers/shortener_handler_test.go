@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"github.com/northmule/shorturl/cmd/client"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"io"
@@ -30,7 +31,7 @@ func TestShortenerHandler(t *testing.T) {
 		want    want
 	}{
 		{
-			name:    "Test #1 - пустой_запрос_возвращает_status_bad_request",
+			name:    "#1_пустой_запрос_возвращает_status_bad_request",
 			request: request{},
 			want: want{
 				code:    http.StatusBadRequest,
@@ -38,7 +39,7 @@ func TestShortenerHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Test_#2_в_body_переданна_не_ссылка_возвращается_status_bad_request",
+			name: "#2_в_body_переданна_не_ссылка_возвращается_status_bad_request",
 			request: request{
 				body: "Жил был слон!",
 			},
@@ -48,7 +49,7 @@ func TestShortenerHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Test_#3_короткая_ссылка_создаётся",
+			name: "#3_короткая_ссылка_создаётся",
 			request: request{
 				body: "https://ya.ru",
 			},
@@ -66,7 +67,8 @@ func TestShortenerHandler(t *testing.T) {
 				t.Error(err)
 			}
 			request.Header.Set("Content-Type", "text/plain")
-			response, err := ts.Client().Do(request)
+
+			response, err := client.ClientApp(client.Params{Request: request})
 			if err != nil {
 				t.Error(err)
 			}
