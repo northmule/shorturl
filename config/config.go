@@ -37,6 +37,8 @@ var AppConfig Config
 // Init Инициализация конфигурации приложения
 func Init() InitConfig {
 	AppConfig = Config{}
+	AppConfig.InitEnvConfig()
+	AppConfig.InitFlagConfig()
 	return &AppConfig
 
 }

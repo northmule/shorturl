@@ -6,18 +6,19 @@ import (
 )
 
 // AppRoutes маршруты приложения
-func AppRoutes() chi.Router {
+func AppRoutes(shortURLService ShortURLServiceInterface) chi.Router {
 	r := chi.NewRouter()
-	// Код ошибки по умолчанию, согласно ТЗ
+
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("method not expect\n"))
 	})
 
-	r.Route("/", func(r chi.Router) {
-		r.Post("/", DecodeHandler)
-		r.Get("/{id}", EncodeHandler)
-	})
+	shortenerHandler := NewShortenerHandler(shortURLService)
+	redirectHandler := NewRedirectHandler(shortURLService)
+
+	r.Post("/", shortenerHandler.ShortenerHandler)
+	r.Get("/{id}", redirectHandler.RedirectHandler)
 
 	return r
 }

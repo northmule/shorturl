@@ -2,8 +2,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 )
@@ -16,7 +14,7 @@ func TestAFlagAndBFlag(t *testing.T) {
 		want  Config
 	}{
 		{
-			name: "#1 задан флаг",
+			name: "#1_задан_флаг",
 			env:  map[string]string{},
 			flags: map[string]string{
 				"a": ":8082",
@@ -28,7 +26,7 @@ func TestAFlagAndBFlag(t *testing.T) {
 			},
 		},
 		{
-			name:  "#2 значения по умолчанию",
+			name:  "#2_значения_по_умолчанию",
 			env:   map[string]string{},
 			flags: map[string]string{},
 			want: Config{
@@ -37,7 +35,7 @@ func TestAFlagAndBFlag(t *testing.T) {
 			},
 		},
 		{
-			name: "#3 есть env, нет флага",
+			name: "#3_есть_env_нет_флага",
 			env: map[string]string{
 				"SERVER_ADDRESS": ":9082",
 				"BASE_URL":       "http://localhost:8082/",
@@ -49,7 +47,7 @@ func TestAFlagAndBFlag(t *testing.T) {
 			},
 		},
 		{
-			name: "#4 есть env, есть флаги",
+			name: "#4_есть_env_есть_флаги",
 			env: map[string]string{
 				"SERVER_ADDRESS": ":9082",
 				"BASE_URL":       "http://localhost:8082/",
@@ -73,7 +71,9 @@ func TestAFlagAndBFlag(t *testing.T) {
 
 			for k, v := range tt.env {
 				err := os.Setenv(k, v)
-				require.NoError(t, err)
+				if err != nil {
+					t.Error(err)
+				}
 			}
 
 			for k, v := range tt.flags {
@@ -81,12 +81,16 @@ func TestAFlagAndBFlag(t *testing.T) {
 			}
 			os.Args = args
 
-			configInit := Init()
-			configInit.InitEnvConfig()
-			configInit.InitFlagConfig()
+			// Инициализация после подготовки флагов и переменных
+			Init()
 
-			assert.Equal(t, tt.want.ServerURL, AppConfig.ServerURL)
-			assert.Equal(t, tt.want.BaseShortURL, AppConfig.BaseShortURL)
+			if tt.want.ServerURL != AppConfig.ServerURL {
+				t.Errorf("Ожидается %#v пришло %#v", tt.want.ServerURL, AppConfig.ServerURL)
+			}
+
+			if tt.want.BaseShortURL != AppConfig.BaseShortURL {
+				t.Errorf("Ожидается %#v пришло %#v", tt.want.BaseShortURL, AppConfig.BaseShortURL)
+			}
 		})
 	}
 }

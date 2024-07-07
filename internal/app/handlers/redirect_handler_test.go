@@ -2,17 +2,19 @@ package handlers
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/northmule/shorturl/internal/app/services/url"
+	"github.com/northmule/shorturl/internal/app/storage"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
-// TestIteration2_EncodeHandler тест обработчика для декодирования ссылки
-func TestIteration2_EncodeHandler(t *testing.T) {
-	ts := httptest.NewServer(AppRoutes())
+// TestRedirectHandler тест обработчика для декодирования ссылки
+func TestRedirectHandler(t *testing.T) {
+	shortURLService := url.NewShortURLService(storage.NewStorage())
+	ts := httptest.NewServer(AppRoutes(&shortURLService))
+
 	defer ts.Close()
 
 	type want struct {
@@ -28,7 +30,7 @@ func TestIteration2_EncodeHandler(t *testing.T) {
 		want    want
 	}{
 		{
-			name: "Test #1 - позитивный",
+			name: "test_#1_короткая_ссылка_преобразуется_в_длинную",
 			request: request{
 				id: "e98192e19505472476a49f10388428ab",
 			},
@@ -38,12 +40,12 @@ func TestIteration2_EncodeHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Test #2 - негативный",
+			name: "Test_#2_передан_не_существующий_id, вернётся_status_bad_request",
 			request: request{
 				id: "123",
 			},
 			want: want{
-				code:     http.StatusBadRequest,
+				code:     http.StatusNotFound,
 				location: "",
 			},
 		},
@@ -58,10 +60,13 @@ func TestIteration2_EncodeHandler(t *testing.T) {
 			}
 			request, err := http.NewRequest(http.MethodGet, ts.URL+"/"+tt.request.id, nil)
 
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+			}
 
 			response, err := ts.Client().Do(request)
 			response.Body.Close()
+
 			var errorValue string
 			if err != nil {
 				errorValue = err.Error()
@@ -70,13 +75,20 @@ func TestIteration2_EncodeHandler(t *testing.T) {
 			if errorValue != "" && strings.Contains(errorValue, "HTTP redirect blocked") {
 				err = nil
 			}
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+			}
 
 			location := response.Header.Get("Location")
-			require.NoError(t, err)
-
-			assert.Equal(t, tt.want.code, response.StatusCode, "Не верный код ответа сервера")
-			assert.Equal(t, tt.want.location, location, "Ошибка в значение body")
+			if err != nil {
+				t.Error(err)
+			}
+			if tt.want.code != response.StatusCode {
+				t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", tt.want.code, response.StatusCode)
+			}
+			if tt.want.location != location {
+				t.Errorf("Ошибка в значение body. Ожидается %#v пришло %#v", tt.want.code, response.StatusCode)
+			}
 		})
 	}
 }
