@@ -16,3 +16,4 @@ shortenertestbeta -test.v -test.run=^TestIteration5$ -binary-path=$SHORTURL_PROJ
 
 # Спринт 2
 shortenertestbeta -test.v -test.run=^TestIteration6$ -source-path=$SHORTURL_PROJECT_PATH
+shortenertestbeta -test.v -test.run=^TestIteration7$ -source-path=$SHORTURL_PROJECT_PATH -binary-path=$SHORTURL_PROJECT_PATH/cmd/shortener/shortener

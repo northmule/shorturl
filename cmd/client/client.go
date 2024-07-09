@@ -51,16 +51,13 @@ func ClientApp(params Params) (*http.Response, error) {
 			return nil, err
 		}
 	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		if isStdin {
-			log.Fatal(err)
-		} else {
-			return nil, err
-		}
-	}
+
 	if isStdin {
 		fmt.Println("Статус-код ", response.Status)
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 		fmt.Println(string(body))
 		return nil, err
 	}

@@ -22,6 +22,7 @@ func AppRoutes(shortURLService ShortURLServiceInterface) chi.Router {
 
 	r.Post("/", shortenerHandler.ShortenerHandler)
 	r.Get("/{id}", redirectHandler.RedirectHandler)
+	r.Post("/api/shorten", shortenerHandler.ShortenerJsonHandler)
 
 	return r
 }
