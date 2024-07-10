@@ -65,15 +65,15 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 	}
 }
 
-type JsonRequest struct {
+type JSONRequest struct {
 	URL string `json:"URL"`
 }
-type JsonResponse struct {
+type JSONResponse struct {
 	Result string `json:"result,omitempty"`
 }
 
-// ShortenerJsonHandler принимает и отдаёт json
-func (s *ShortenerHandler) ShortenerJsonHandler(res http.ResponseWriter, req *http.Request) {
+// ShortenerJSONHandler принимает и отдаёт json
+func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *http.Request) {
 
 	bodyValue, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -83,7 +83,7 @@ func (s *ShortenerHandler) ShortenerJsonHandler(res http.ResponseWriter, req *ht
 
 	defer req.Body.Close()
 
-	var jsonRequest JsonRequest
+	var jsonRequest JSONRequest
 	if err = json.Unmarshal(bodyValue, &jsonRequest); err != nil {
 		http.Error(res, "error unmarshal json request", http.StatusBadRequest)
 		return
@@ -103,16 +103,15 @@ func (s *ShortenerHandler) ShortenerJsonHandler(res http.ResponseWriter, req *ht
 		return
 	}
 
-	responseJson := JsonResponse{
+	responseJSON := JSONResponse{
 		Result: fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURLData.ShortURL),
 	}
-	responseString, err := json.Marshal(responseJson)
+	responseString, err := json.Marshal(responseJSON)
 	if err != nil {
-		if err != nil {
-			http.Error(res, "error json marshal response", http.StatusInternalServerError)
-			return
-		}
+		http.Error(res, "error json marshal response", http.StatusInternalServerError)
+		return
 	}
+
 	res.WriteHeader(http.StatusCreated)
 
 	_, err = res.Write(responseString)
