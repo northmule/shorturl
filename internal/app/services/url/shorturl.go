@@ -27,12 +27,12 @@ type repositoryURLInterface interface {
 	FindByURL(url string) (*models.URL, error)
 }
 
-func NewShortURLService(storage repositoryURLInterface) ShortURLService {
+func NewShortURLService(storage repositoryURLInterface) *ShortURLService {
 	service := &ShortURLService{
 		Storage: storage,
 	}
 
-	return *service
+	return service
 }
 
 // DecodeURL вернёт короткий url

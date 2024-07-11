@@ -22,13 +22,13 @@ type Config struct {
 	// Базовый адрес результирующего сокращённого URL
 	//(значение: адрес сервера перед коротким URL, например http://localhost:8000/qsd54gFg).
 	BaseShortURL string `env:"BASE_URL"`
-	DatabasePath string
+	// Путь для хранения ссылок
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 }
 
 type InitConfig interface {
 	InitEnvConfig()
 	InitFlagConfig()
-	InitStaticConfig()
 }
 
 // AppConfig глобальная переменная конфигурации
@@ -51,10 +51,6 @@ func (c *Config) InitFlagConfig() {
 	initFlagConfig(c)
 }
 
-func (c *Config) InitStaticConfig() {
-	initStaticConfig(c)
-}
-
 // initEnvConfig прасинг env переменных
 func initEnvConfig(appConfig *Config) {
 	// Заполнение значений из окружения
@@ -70,6 +66,8 @@ func initFlagConfig(appConfig *Config) {
 	configFlag := flag.FlagSet{}
 	flagServerURLValue := configFlag.String("a", addressAndPortDefault, "address and port to run server")
 	flagBaseShortURLValue := configFlag.String("b", baseAddressDefault, "the base address of the resulting shortened URL")
+	// Если указан пустой флга, запись в файл отключается
+	flagFileStoragePath := configFlag.String("f", "/tmp/short-url-db.json", "the path to the file for storing links")
 	err := configFlag.Parse(os.Args[1:])
 	if err != nil {
 		_ = fmt.Errorf("parse error os.Args: %s", err)
@@ -81,10 +79,8 @@ func initFlagConfig(appConfig *Config) {
 	if appConfig.BaseShortURL == "" {
 		appConfig.BaseShortURL = *flagBaseShortURLValue
 	}
+	if appConfig.FileStoragePath == "" {
+		appConfig.FileStoragePath = *flagFileStoragePath
+	}
 
-}
-
-// initStaticConfig todo убрать в будущем
-func initStaticConfig(appConfig *Config) {
-	appConfig.DatabasePath = "/home/djo/GolandProjects/shorturl/shorturl.db"
 }

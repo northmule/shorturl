@@ -17,7 +17,7 @@ import (
 // TestShortenerHandler тест обработчика для декодирования ссылки
 func TestShortenerHandler(t *testing.T) {
 	shortURLService := url.NewShortURLService(storage.NewStorage())
-	ts := httptest.NewServer(AppRoutes(&shortURLService))
+	ts := httptest.NewServer(AppRoutes(shortURLService))
 	defer ts.Close()
 
 	type want struct {
@@ -98,7 +98,7 @@ func TestShortenerHandler(t *testing.T) {
 
 func TestMethodNotAllowed(t *testing.T) {
 	shortURLService := url.NewShortURLService(storage.NewStorage())
-	ts := httptest.NewServer(AppRoutes(&shortURLService))
+	ts := httptest.NewServer(AppRoutes(shortURLService))
 	defer ts.Close()
 
 	request, err := http.NewRequest(http.MethodGet, ts.URL, nil)
@@ -118,7 +118,7 @@ func TestMethodNotAllowed(t *testing.T) {
 
 func TestShortenerJsonHandler(t *testing.T) {
 	shortURLService := url.NewShortURLService(storage.NewStorage())
-	ts := httptest.NewServer(AppRoutes(&shortURLService))
+	ts := httptest.NewServer(AppRoutes(shortURLService))
 	defer ts.Close()
 
 	type want struct {
@@ -205,7 +205,7 @@ func TestShortenerJsonHandler(t *testing.T) {
 
 func TestGzipCompression(t *testing.T) {
 	shortURLService := url.NewShortURLService(storage.NewStorage())
-	ts := httptest.NewServer(AppRoutes(&shortURLService))
+	ts := httptest.NewServer(AppRoutes(shortURLService))
 	defer ts.Close()
 
 	requestBody := `{

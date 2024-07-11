@@ -60,3 +60,8 @@ func (s *Storage) FindByURL(url string) (*models.URL, error) {
 	}
 	return nil, fmt.Errorf("the url link was not found")
 }
+
+// RestoreDBStorage восстановит бд из переданного значения
+func (s *Storage) RestoreDBStorage(db map[string]models.URL) {
+	s.db = &db
+}
