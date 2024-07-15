@@ -26,17 +26,17 @@ func ClientApp(params Params) (*http.Response, error) {
 	isStdin := false
 	if params.Request == nil {
 		data := url.Values{}
-		fmt.Println("Введите длинный URL")
+		log.Println("Введите длинный URL")
 		reader := bufio.NewReader(os.Stdin)
 		long, err := reader.ReadString('\n')
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		long = strings.TrimSuffix(long, "\n")
 		data.Set("url", long)
 		request, err = http.NewRequest(http.MethodPost, endpoint, strings.NewReader(data.Encode()))
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		request.Header.Add("Content-Type", contentType)
 		isStdin = true
@@ -45,20 +45,17 @@ func ClientApp(params Params) (*http.Response, error) {
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		if isStdin {
-			log.Fatal(err)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	if isStdin {
-		fmt.Println("Статус-код ", response.Status)
+		log.Println("Статус-код ", response.Status)
 		body, err := io.ReadAll(response.Body)
+		defer response.Body.Close()
 		if err != nil {
-			log.Fatal(err)
+			return nil, fmt.Errorf("execute request: %v", err)
 		}
-		fmt.Println(string(body))
+		log.Println(string(body))
 		return nil, err
 	}
 	return response, nil

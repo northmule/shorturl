@@ -10,6 +10,8 @@ import (
 	"regexp"
 )
 
+var regexMustCompileURL = regexp.MustCompile(`(http|https)://\S+`)
+
 type ShortenerHandler struct {
 	regexpURLMustCompile *regexp.Regexp
 	service              ShortURLServiceInterface
@@ -26,7 +28,7 @@ type ShortURLServiceInterface interface {
 
 func NewShortenerHandler(urlService ShortURLServiceInterface) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{
-		regexpURLMustCompile: regexp.MustCompile(`(http|https)://\S+`),
+		regexpURLMustCompile: regexMustCompileURL,
 		service:              urlService,
 	}
 	return *shortenerHandler
