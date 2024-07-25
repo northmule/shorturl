@@ -16,12 +16,7 @@ type Setter struct {
 }
 
 // NewSetter конструктор
-func NewSetter(filename string, shortURLService *url.ShortURLService) (*Setter, error) {
-	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		logger.Log.Sugar().Errorw("Failed to open file", "filename", filename, "error", err)
-		return nil, err
-	}
+func NewSetter(file *os.File, shortURLService *url.ShortURLService) (*Setter, error) {
 	return &Setter{
 		file:            file,
 		shortURLService: shortURLService,
@@ -60,7 +55,7 @@ func (s *Setter) EncodeShortURL(url string) (*url.ShortURLData, error) {
 func (s *Setter) WriteURLs(data *map[string]models.URL) {
 	for k, v := range *data {
 		if err := s.WriteURL(v); err != nil {
-			logger.Log.Sugar().Error("Failed to encode url", "url", k, "error", err)
+			logger.LogSugar.Error("Failed to encode url", "url", k, "error", err)
 			continue
 		}
 	}
@@ -76,12 +71,7 @@ type Getter struct {
 	scanner *bufio.Scanner
 }
 
-func NewGetter(filename string) (*Getter, error) {
-	file, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0666)
-	if err != nil {
-		logger.Log.Sugar().Errorw("Failed to open file", "filename", filename, "error", err)
-		return nil, err
-	}
+func NewGetter(file *os.File) (*Getter, error) {
 	return &Getter{
 		file:    file,
 		scanner: bufio.NewScanner(file),
@@ -92,7 +82,7 @@ func NewGetter(filename string) (*Getter, error) {
 func (g *Getter) ReadURL() (*models.URL, error) {
 	url := &models.URL{}
 	if err := g.decoder.Decode(url); err != nil {
-		logger.Log.Sugar().Errorw("Failed to read URL", "error", err)
+		logger.LogSugar.Errorw("Failed to read URL", "error", err)
 		return nil, err
 	}
 	return url, nil
@@ -106,7 +96,7 @@ func (g *Getter) ReadURLAll() (map[string]models.URL, error) {
 		url := models.URL{}
 		err := json.Unmarshal(lineData, &url)
 		if err != nil {
-			logger.Log.Sugar().Errorw("Failed Unmarshal URL", "error", err)
+			logger.LogSugar.Errorw("Failed Unmarshal URL", "error", err)
 		}
 		url.ID = uint(idNum)
 		mapData[url.ShortURL] = url
@@ -114,7 +104,7 @@ func (g *Getter) ReadURLAll() (map[string]models.URL, error) {
 
 	}
 	if err := g.scanner.Err(); err != nil {
-		logger.Log.Sugar().Error("Failed scan map")
+		logger.LogSugar.Error("Failed scan map")
 		return nil, err
 	}
 	return mapData, nil

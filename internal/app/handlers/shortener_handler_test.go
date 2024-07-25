@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"github.com/northmule/shorturl/cmd/client"
+	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"io"
@@ -16,7 +17,7 @@ import (
 
 // TestShortenerHandler тест обработчика для декодирования ссылки
 func TestShortenerHandler(t *testing.T) {
-	shortURLService := url.NewShortURLService(storage.NewStorage())
+	shortURLService := url.NewShortURLService(storage.NewStorage(false))
 	ts := httptest.NewServer(AppRoutes(shortURLService))
 	defer ts.Close()
 
@@ -97,7 +98,7 @@ func TestShortenerHandler(t *testing.T) {
 }
 
 func TestMethodNotAllowed(t *testing.T) {
-	shortURLService := url.NewShortURLService(storage.NewStorage())
+	shortURLService := url.NewShortURLService(storage.NewStorage(false))
 	ts := httptest.NewServer(AppRoutes(shortURLService))
 	defer ts.Close()
 
@@ -117,7 +118,7 @@ func TestMethodNotAllowed(t *testing.T) {
 }
 
 func TestShortenerJsonHandler(t *testing.T) {
-	shortURLService := url.NewShortURLService(storage.NewStorage())
+	shortURLService := url.NewShortURLService(storage.NewStorage(false))
 	ts := httptest.NewServer(AppRoutes(shortURLService))
 	defer ts.Close()
 
@@ -204,7 +205,8 @@ func TestShortenerJsonHandler(t *testing.T) {
 }
 
 func TestGzipCompression(t *testing.T) {
-	shortURLService := url.NewShortURLService(storage.NewStorage())
+	_ = logger.NewLogger("info")
+	shortURLService := url.NewShortURLService(storage.NewStorage(false))
 	ts := httptest.NewServer(AppRoutes(shortURLService))
 	defer ts.Close()
 
@@ -222,19 +224,16 @@ func TestGzipCompression(t *testing.T) {
 		}
 		err = gzipBuffer.Close()
 		if err != nil {
-			t.Error(err)
-			return
+			t.Fatal(err)
 		}
 		encodeString := encodeBuffer.String()
 
 		if encodeString == "" {
-			t.Error("Запрос не был сжат перед отправкой")
-			return
+			t.Fatal("Запрос не был сжат перед отправкой")
 		}
 		request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten", encodeBuffer)
 		if err != nil {
-			t.Error(err)
-			return
+			t.Fatal(err)
 		}
 		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("Content-Encoding", "gzip")
@@ -263,8 +262,7 @@ func TestGzipCompression(t *testing.T) {
 	t.Run("не_отправляем_поддерживаемый_content_type, сжатия_не_должно_быть", func(t *testing.T) {
 		request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten", bytes.NewBufferString(requestBody))
 		if err != nil {
-			t.Error(err)
-			return
+			t.Fatal(err)
 		}
 		request.Header.Set("Accept-Encoding", "gzip")
 		response, err := client.ClientApp(client.Params{Request: request})
@@ -291,8 +289,7 @@ func TestGzipCompression(t *testing.T) {
 	t.Run("проверяем_что_сервер_вернул_тело_ответа_в_сжатом_виде", func(t *testing.T) {
 		request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten", bytes.NewBufferString(requestBody))
 		if err != nil {
-			t.Error(err)
-			return
+			t.Fatal(err)
 		}
 		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("Accept-Encoding", "gzip")
@@ -304,13 +301,11 @@ func TestGzipCompression(t *testing.T) {
 
 		unpackBody, err := gzip.NewReader(response.Body) // Распаковываем данные ответа
 		if err != nil {
-			t.Error(err)
-			return
+			t.Fatal(err)
 		}
 		respBody, err := io.ReadAll(unpackBody)
 		if err != nil {
-			t.Error(err)
-			return
+			t.Fatal(err)
 		}
 		var jsonResponse JSONResponse
 		err = json.Unmarshal(respBody, &jsonResponse)

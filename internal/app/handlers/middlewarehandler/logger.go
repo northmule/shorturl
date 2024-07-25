@@ -3,6 +3,7 @@ package middlewarehandler
 import (
 	"github.com/northmule/shorturl/internal/app/logger"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -61,19 +62,25 @@ func MiddlewareLogger(next http.Handler) http.Handler {
 		next.ServeHTTP(listenerResponse, request)
 
 		listenerResponse.loggingData.executeTime = time.Since(startTime).String()
-		sugarLogger := logger.Log.Sugar()
 
-		sugarLogger.Infof(
+		logger.LogSugar.Infof(
 			"Request: URL %s, method: %s, executeTime: %s",
 			listenerResponse.loggingData.url,
 			listenerResponse.loggingData.method,
 			listenerResponse.loggingData.executeTime,
 		)
 
-		sugarLogger.Infof(
+		logger.LogSugar.Infof(
 			"Response: statusCode: %d, size: %d bytes",
 			listenerResponse.loggingData.statusCode,
 			listenerResponse.loggingData.size,
 		)
+
+		logger.LogSugar.Infof("Headers request: %#v", request.Header)
+		responseHeaders := make(map[string]string)
+		for key, value := range response.Header() {
+			responseHeaders[key] = strings.Join(value, ",")
+		}
+		logger.LogSugar.Infof("Headers response: %#v", responseHeaders)
 	})
 }

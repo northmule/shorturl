@@ -9,7 +9,7 @@ import (
 
 func TestStorage_StorageMethods(t *testing.T) {
 
-	storage := NewStorage()
+	storage := NewStorage(false)
 
 	tests := []struct {
 		name     string
@@ -48,7 +48,7 @@ func TestStorage_StorageMethods(t *testing.T) {
 
 // TestConcurrentAdd Не должен упасть с fatal error: concurrent map writes
 func TestConcurrentAdd(t *testing.T) {
-	storage := NewStorage()
+	storage := NewStorage(false)
 
 	for i := 0; i < 200; i++ {
 		go func() {

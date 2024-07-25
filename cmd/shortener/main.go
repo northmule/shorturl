@@ -10,6 +10,7 @@ import (
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -24,14 +25,21 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	config.Init()
-	storage := appStorage.NewStorage()
-	restoreStorageData(config.AppConfig.FileStoragePath, storage)
+	_, err = config.Init()
+	if err != nil {
+		return err
+	}
+	storage := appStorage.NewStorage(config.AppConfig.FileStoragePath != "")
 
 	var shortURLService handlers.ShortURLServiceInterface
 
 	if config.AppConfig.FileStoragePath != "" {
-		shortURLService, err = filestorage.NewSetter(config.AppConfig.FileStoragePath, url.NewShortURLService(storage))
+		file, err := os.OpenFile(config.AppConfig.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			logger.LogSugar.Errorf("Failed to open file %s: error: %s", config.AppConfig.FileStoragePath, err)
+			return err
+		}
+		shortURLService, err = filestorage.NewSetter(file, url.NewShortURLService(storage))
 		if err != nil {
 			return err
 		}
@@ -41,25 +49,4 @@ func run() error {
 
 	fmt.Println("Running server on - ", config.AppConfig.ServerURL)
 	return http.ListenAndServe(config.AppConfig.ServerURL, handlers.AppRoutes(shortURLService))
-}
-
-// restoreStorageData загрузка данных URL из файла
-func restoreStorageData(file string, storage *appStorage.Storage) {
-	if file == "" {
-		return
-	}
-	fileStorage, err := filestorage.NewGetter(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	storageData, err := fileStorage.ReadURLAll()
-	if err != nil {
-		logger.Log.Sugar().Info(err)
-		return
-	}
-	if storageData == nil {
-		logger.Log.Sugar().Info("storageData empty")
-		return
-	}
-	storage.RestoreDBStorage(storageData)
 }

@@ -2,8 +2,8 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"github.com/caarlos0/env"
+	"github.com/northmule/shorturl/internal/app/logger"
 	"os"
 )
 
@@ -14,6 +14,7 @@ import (
 
 const addressAndPortDefault = ":8080"
 const baseAddressDefault = "http://localhost:8080"
+const pathFileStorage = "/tmp/short-url-db.json"
 
 // Config Конфигурация приложения
 type Config struct {
@@ -27,50 +28,58 @@ type Config struct {
 }
 
 type InitConfig interface {
-	InitEnvConfig()
-	InitFlagConfig()
+	InitEnvConfig() error
+	InitFlagConfig() error
 }
 
 // AppConfig глобальная переменная конфигурации
 var AppConfig Config
 
 // Init Инициализация конфигурации приложения
-func Init() InitConfig {
+func Init() (InitConfig, error) {
 	AppConfig = Config{}
-	AppConfig.InitEnvConfig()
-	AppConfig.InitFlagConfig()
-	return &AppConfig
+	err := AppConfig.InitEnvConfig()
+	if err != nil {
+		return nil, err
+	}
+	err = AppConfig.InitFlagConfig()
+	if err != nil {
+		return nil, err
+	}
+	return &AppConfig, nil
 
 }
 
-func (c *Config) InitEnvConfig() {
-	initEnvConfig(c)
+func (c *Config) InitEnvConfig() error {
+	return initEnvConfig(c)
 }
 
-func (c *Config) InitFlagConfig() {
-	initFlagConfig(c)
+func (c *Config) InitFlagConfig() error {
+	return initFlagConfig(c)
 }
 
 // initEnvConfig прасинг env переменных
-func initEnvConfig(appConfig *Config) {
+func initEnvConfig(appConfig *Config) error {
 	// Заполнение значений из окружения
 	err := env.Parse(appConfig)
 	if err != nil {
-		_ = fmt.Errorf("parse error env: %s", err)
+		return err
 	}
+	return nil
 }
 
 // initFlagConfig парсинг флагов командной строки
-func initFlagConfig(appConfig *Config) {
+func initFlagConfig(appConfig *Config) error {
 	// На каждый новый запуск новая структура флагов
 	configFlag := flag.FlagSet{}
 	flagServerURLValue := configFlag.String("a", addressAndPortDefault, "address and port to run server")
 	flagBaseShortURLValue := configFlag.String("b", baseAddressDefault, "the base address of the resulting shortened URL")
 	// Если указан пустой флга, запись в файл отключается
-	flagFileStoragePath := configFlag.String("f", "/tmp/short-url-db.json", "the path to the file for storing links")
+	flagFileStoragePath := configFlag.String("f", pathFileStorage, "the path to the file for storing links")
 	err := configFlag.Parse(os.Args[1:])
 	if err != nil {
-		_ = fmt.Errorf("parse error os.Args: %s", err)
+		logger.LogSugar.Error("configFlag.Parse error", err)
+		return err
 	}
 
 	if appConfig.ServerURL == "" {
@@ -82,5 +91,5 @@ func initFlagConfig(appConfig *Config) {
 	if appConfig.FileStoragePath == "" {
 		appConfig.FileStoragePath = *flagFileStoragePath
 	}
-
+	return nil
 }

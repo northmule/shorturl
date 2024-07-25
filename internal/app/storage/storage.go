@@ -2,7 +2,11 @@ package storage
 
 import (
 	"fmt"
+	"github.com/northmule/shorturl/config"
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/filestorage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
+	"os"
 	"sync"
 )
 
@@ -13,7 +17,7 @@ type Storage struct {
 	mx sync.RWMutex
 }
 
-func NewStorage() *Storage {
+func NewStorage(restore bool) *Storage {
 	databaseData := make(map[string]models.URL, 1000)
 	// Демо данные
 	databaseData["e98192e19505472476a49f10388428ab"] = models.URL{
@@ -24,6 +28,9 @@ func NewStorage() *Storage {
 
 	storage := Storage{
 		db: &databaseData,
+	}
+	if restore {
+		storage.restoreStorage(config.AppConfig.FileStoragePath)
 	}
 	return &storage
 }
@@ -61,7 +68,30 @@ func (s *Storage) FindByURL(url string) (*models.URL, error) {
 	return nil, fmt.Errorf("the url link was not found")
 }
 
-// RestoreDBStorage восстановит бд из переданного значения
-func (s *Storage) RestoreDBStorage(db map[string]models.URL) {
-	s.db = &db
+// restoreStorage восстановит бд из переданного значения
+func (s *Storage) restoreStorage(filePath string) {
+	if filePath == "" {
+		logger.LogSugar.Error("path filePath empty")
+		return
+	}
+	file, err := os.OpenFile(filePath, os.O_RDONLY|os.O_CREATE, 0666)
+	if err != nil {
+		logger.LogSugar.Errorf("Failed to open filePath %s: error: %s", filePath, err)
+		return
+	}
+	fileStorage, err := filestorage.NewGetter(file)
+	if err != nil {
+		logger.LogSugar.Errorf("filestorage.NewGetter(%s) %s", filePath, err)
+		return
+	}
+	storageData, err := fileStorage.ReadURLAll()
+	if err != nil {
+		logger.LogSugar.Error(err)
+		return
+	}
+	if storageData == nil {
+		logger.LogSugar.Info("storageData empty")
+		return
+	}
+	s.db = &storageData
 }

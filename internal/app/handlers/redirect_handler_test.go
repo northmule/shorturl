@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"net/http"
@@ -12,7 +13,8 @@ import (
 
 // TestRedirectHandler тест обработчика для декодирования ссылки
 func TestRedirectHandler(t *testing.T) {
-	shortURLService := url.NewShortURLService(storage.NewStorage())
+	_ = logger.NewLogger("fatal")
+	shortURLService := url.NewShortURLService(storage.NewStorage(false))
 	ts := httptest.NewServer(AppRoutes(shortURLService))
 
 	defer ts.Close()

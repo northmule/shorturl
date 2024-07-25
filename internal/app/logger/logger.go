@@ -6,6 +6,7 @@ import (
 
 // Log будет доступен всему коду как синглтон.
 var Log *zap.Logger = zap.NewNop()
+var LogSugar *zap.SugaredLogger
 
 func NewLogger(level string) error {
 	// преобразуем текстовый уровень логирования в zap.AtomicLevel
@@ -20,5 +21,6 @@ func NewLogger(level string) error {
 		return err
 	}
 	Log = appLogger
+	LogSugar = Log.Sugar()
 	return nil
 }

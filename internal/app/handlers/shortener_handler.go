@@ -10,11 +10,11 @@ import (
 	"regexp"
 )
 
-var regexMustCompileURL = regexp.MustCompile(`(http|https)://\S+`)
+var regexURL = regexp.MustCompile(`(http|https)://\S+`)
 
 type ShortenerHandler struct {
-	regexpURLMustCompile *regexp.Regexp
-	service              ShortURLServiceInterface
+	regexURL *regexp.Regexp
+	service  ShortURLServiceInterface
 }
 
 type ShortenerHandlerInterface interface {
@@ -28,8 +28,8 @@ type ShortURLServiceInterface interface {
 
 func NewShortenerHandler(urlService ShortURLServiceInterface) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{
-		regexpURLMustCompile: regexMustCompileURL,
-		service:              urlService,
+		regexURL: regexURL,
+		service:  urlService,
 	}
 	return *shortenerHandler
 }
@@ -45,7 +45,7 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 	defer req.Body.Close()
 
 	// Проверяем, содержится ли в bodyValue URL
-	if !s.regexpURLMustCompile.Match(bodyValue) {
+	if !s.regexURL.Match(bodyValue) {
 		http.Error(res, "expected url", http.StatusBadRequest)
 		return
 	}
@@ -67,11 +67,11 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 	}
 }
 
-type JSONRequest struct {
+type ShortenerRequest struct {
 	URL string `json:"URL"`
 }
 type JSONResponse struct {
-	Result string `json:"result,omitempty"`
+	Result string `json:"result"`
 }
 
 // ShortenerJSONHandler принимает и отдаёт json
@@ -85,21 +85,21 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 
 	defer req.Body.Close()
 
-	var jsonRequest JSONRequest
-	if err = json.Unmarshal(bodyValue, &jsonRequest); err != nil {
+	var shortenerRequest ShortenerRequest
+	if err = json.Unmarshal(bodyValue, &shortenerRequest); err != nil {
 		http.Error(res, "error unmarshal json request", http.StatusBadRequest)
 		return
 	}
 
 	// Проверяем, содержится ли в bodyValue URL
-	if !s.regexpURLMustCompile.MatchString(jsonRequest.URL) {
+	if !s.regexURL.MatchString(shortenerRequest.URL) {
 		http.Error(res, "expected url", http.StatusBadRequest)
 		return
 	}
 
 	res.Header().Set("content-type", "application/json")
 
-	shortURLData, err := s.service.DecodeURL(jsonRequest.URL)
+	shortURLData, err := s.service.DecodeURL(shortenerRequest.URL)
 	if err != nil {
 		http.Error(res, "error decode url", http.StatusBadRequest)
 		return
