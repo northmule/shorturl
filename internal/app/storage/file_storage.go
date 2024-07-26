@@ -75,7 +75,7 @@ func (f *FileStorage) Add(url models.URL) error {
 // FindByShortURL поиск по короткой ссылке
 func (f *FileStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	for _, value := range f.cacheValues {
-		if strings.Contains(value, shortURL) {
+		if strings.Contains(value, fmt.Sprintf("\"%s\"", shortURL)) {
 			url := models.URL{}
 			err := json.Unmarshal([]byte(value), &url)
 			if err != nil {
@@ -92,7 +92,7 @@ func (f *FileStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 // FindByURL поиск по URL
 func (f *FileStorage) FindByURL(url string) (*models.URL, error) {
 	for _, value := range f.cacheValues {
-		if strings.Contains(value, url) {
+		if strings.Contains(value, fmt.Sprintf("\"%s\"", url)) {
 			url := models.URL{}
 			err := json.Unmarshal([]byte(value), &url)
 			if err != nil {

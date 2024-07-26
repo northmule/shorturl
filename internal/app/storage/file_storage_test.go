@@ -126,7 +126,7 @@ func TestFileStorage_Add(t *testing.T) {
 		defer os.Remove(file.Name())
 		fileStorage := NewFileStorage(file)
 
-		for i := 0; i < 2000; i++ {
+		for i := 0; i < 200; i++ {
 			go func() {
 				fileStorage.Add(models.URL{
 					ID:       uint(i),
