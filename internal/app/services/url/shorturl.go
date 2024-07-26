@@ -25,6 +25,7 @@ type StorageInterface interface {
 	Add(url models.URL) error
 	FindByShortURL(shortURL string) (*models.URL, error)
 	FindByURL(url string) (*models.URL, error)
+	Ping() error
 }
 
 func NewShortURLService(storage StorageInterface) *ShortURLService {

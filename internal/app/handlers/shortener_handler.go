@@ -14,19 +14,14 @@ var regexURL = regexp.MustCompile(`(http|https)://\S+`)
 
 type ShortenerHandler struct {
 	regexURL *regexp.Regexp
-	service  ShortURLServiceInterface
+	service  *url.ShortURLService
 }
 
 type ShortenerHandlerInterface interface {
 	ShortenerHandler(res http.ResponseWriter, req *http.Request)
 }
 
-type ShortURLServiceInterface interface {
-	DecodeURL(url string) (*url.ShortURLData, error)
-	EncodeShortURL(string) (*url.ShortURLData, error)
-}
-
-func NewShortenerHandler(urlService ShortURLServiceInterface) ShortenerHandler {
+func NewShortenerHandler(urlService *url.ShortURLService) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{
 		regexURL: regexURL,
 		service:  urlService,

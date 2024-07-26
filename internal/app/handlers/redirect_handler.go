@@ -2,18 +2,19 @@ package handlers
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/northmule/shorturl/internal/app/services/url"
 	"net/http"
 )
 
 type RedirectHandler struct {
-	service ShortURLServiceInterface
+	service *url.ShortURLService
 }
 
 type RedirectHandlerInterface interface {
 	RedirectHandler(res http.ResponseWriter, req *http.Request)
 }
 
-func NewRedirectHandler(urlService ShortURLServiceInterface) RedirectHandler {
+func NewRedirectHandler(urlService *url.ShortURLService) RedirectHandler {
 	redirectHandler := &RedirectHandler{
 		service: urlService,
 	}
