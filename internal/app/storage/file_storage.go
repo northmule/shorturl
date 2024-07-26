@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"io"
 	"os"
 	"strings"
 )
@@ -37,36 +36,10 @@ func (f *FileStorage) Add(url models.URL) error {
 	}
 	modelJSON := string(modelRaw)
 
-	if len(f.cacheValues) > 0 {
-		_, err = f.file.Seek(0, io.SeekStart)
-		if err != nil {
-			logger.LogSugar.Errorf("Ошибка усечения файла")
-			return err
-		}
-		err = f.file.Truncate(0)
-		if err != nil {
-			logger.LogSugar.Errorf("Ошибка усечения файла")
-			return err
-		}
-	}
-
-	if len(f.cacheValues) == 0 {
-		f.cacheValues = append(f.cacheValues, modelJSON)
-	}
-
-	for _, value := range f.cacheValues {
-		_, err = f.file.WriteString(value + "\n")
-		if err != nil {
-			logger.LogSugar.Errorf("Ошибка записи строки %s в файл %s", value, f.file.Name())
-		}
-
-		if !strings.Contains(value, modelJSON) {
-			f.cacheValues = append(f.cacheValues, modelJSON)
-			_, err = f.file.WriteString(modelJSON + "\n")
-			if err != nil {
-				logger.LogSugar.Errorf("Ошибка записи строки %s в файл %s", modelJSON, f.file.Name())
-			}
-		}
+	f.cacheValues = append(f.cacheValues, modelJSON)
+	_, err = f.file.WriteString(modelJSON + "\n")
+	if err != nil {
+		logger.LogSugar.Errorf("Ошибка записи строки %s в файл %s", modelJSON, f.file.Name())
 	}
 
 	return nil
