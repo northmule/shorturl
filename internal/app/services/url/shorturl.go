@@ -16,18 +16,18 @@ type ShortURLData struct {
 }
 
 type ShortURLService struct {
-	Storage      repositoryURLInterface
+	Storage      StorageInterface
 	shortURLData ShortURLData
 }
 
-// RepositoryURLInterface методы
-type repositoryURLInterface interface {
+// StorageInterface методы
+type StorageInterface interface {
 	Add(url models.URL) error
 	FindByShortURL(shortURL string) (*models.URL, error)
 	FindByURL(url string) (*models.URL, error)
 }
 
-func NewShortURLService(storage repositoryURLInterface) *ShortURLService {
+func NewShortURLService(storage StorageInterface) *ShortURLService {
 	service := &ShortURLService{
 		Storage: storage,
 	}

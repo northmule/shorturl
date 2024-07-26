@@ -14,7 +14,7 @@ import (
 // TestRedirectHandler тест обработчика для декодирования ссылки
 func TestRedirectHandler(t *testing.T) {
 	_ = logger.NewLogger("fatal")
-	shortURLService := url.NewShortURLService(storage.NewStorage(false))
+	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	ts := httptest.NewServer(AppRoutes(shortURLService))
 
 	defer ts.Close()

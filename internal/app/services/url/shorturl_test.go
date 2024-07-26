@@ -45,7 +45,7 @@ func TestShortURLService_DecodeURL(t *testing.T) {
 	NewShortURLService(storageMock)
 
 	type fields struct {
-		Storage      repositoryURLInterface
+		Storage      StorageInterface
 		shortURLData ShortURLData
 	}
 	type args struct {
@@ -111,7 +111,7 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 	})
 
 	type fields struct {
-		Storage      repositoryURLInterface
+		Storage      StorageInterface
 		shortURLData ShortURLData
 	}
 	type args struct {

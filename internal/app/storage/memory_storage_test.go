@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-func TestStorage_StorageMethods(t *testing.T) {
+func TestMemoryStorage_StorageMethods(t *testing.T) {
 
-	storage := NewStorage(false)
+	storage := NewMemoryStorage()
 
 	tests := []struct {
 		name     string
@@ -46,9 +46,9 @@ func TestStorage_StorageMethods(t *testing.T) {
 	}
 }
 
-// TestConcurrentAdd Не должен упасть с fatal error: concurrent map writes
-func TestConcurrentAdd(t *testing.T) {
-	storage := NewStorage(false)
+// TestMemoryStorage_concurrentAdd Не должен упасть с fatal error: concurrent map writes
+func TestMemoryStorage_concurrentAdd(t *testing.T) {
+	storage := NewMemoryStorage()
 
 	for i := 0; i < 200; i++ {
 		go func() {

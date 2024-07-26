@@ -5,7 +5,6 @@ import (
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/handlers"
 	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/filestorage"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
 	"log"
@@ -29,24 +28,21 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	storage := appStorage.NewStorage(config.AppConfig.FileStoragePath != "")
 
 	var shortURLService handlers.ShortURLServiceInterface
+	var storage url.StorageInterface
 
 	if config.AppConfig.FileStoragePath != "" {
-		file, err := os.OpenFile(config.AppConfig.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+		file, err := os.OpenFile(config.AppConfig.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			logger.LogSugar.Errorf("Failed to open file %s: error: %s", config.AppConfig.FileStoragePath, err)
 			return err
 		}
-		shortURLService, err = filestorage.NewSetter(file, url.NewShortURLService(storage))
-		if err != nil {
-			return err
-		}
+		storage = appStorage.NewFileStorage(file)
 	} else {
-		shortURLService = url.NewShortURLService(storage)
+		storage = appStorage.NewMemoryStorage()
 	}
-
+	shortURLService = url.NewShortURLService(storage)
 	fmt.Println("Running server on - ", config.AppConfig.ServerURL)
 	return http.ListenAndServe(config.AppConfig.ServerURL, handlers.AppRoutes(shortURLService))
 }
