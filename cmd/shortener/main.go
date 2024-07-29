@@ -31,19 +31,19 @@ func run() error {
 
 	var storage url.StorageInterface
 
-	if config.AppConfig.FileStoragePath != "" {
+	if config.AppConfig.DataBaseDsn != "" {
+		storage, err = appStorage.NewPostgresStorage(config.AppConfig.DataBaseDsn)
+		if err != nil {
+			logger.LogSugar.Errorf("Failed NewPostgresStorage dsn: %s, %s", config.AppConfig.DataBaseDsn, err)
+			return err
+		}
+	} else if config.AppConfig.FileStoragePath != "" {
 		file, err := os.OpenFile(config.AppConfig.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			logger.LogSugar.Errorf("Failed to open file %s: error: %s", config.AppConfig.FileStoragePath, err)
 			return err
 		}
 		storage = appStorage.NewFileStorage(file)
-	} else if config.AppConfig.DataBaseDsn != "" {
-		storage, err = appStorage.NewPostgresStorage(config.AppConfig.DataBaseDsn)
-		if err != nil {
-			logger.LogSugar.Errorf("Failed NewPostgresStorage dsn: %s, %s", config.AppConfig.DataBaseDsn, err)
-			return err
-		}
 	} else {
 		storage = appStorage.NewMemoryStorage()
 	}
