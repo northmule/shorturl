@@ -45,7 +45,7 @@ func (p *PostgresStorage) Add(url models.URL) error {
 func (p *PostgresStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
-	result, err := p.DB.QueryContext(
+	rows, err := p.DB.QueryContext(
 		ctx,
 		"select id, short_url, url from url_list where short_url = $1 limit 1",
 		shortURL,
@@ -54,9 +54,14 @@ func (p *PostgresStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 		logger.LogSugar.Errorf("При вызове FindByShortURL(%s) произошла ошибка %s", shortURL, err)
 		return nil, err
 	}
+	err = rows.Err()
+	if err != nil {
+		logger.LogSugar.Errorf("При вызове FindByShortURL(%s) произошла ошибка %s", shortURL, err)
+		return nil, err
+	}
 	url := models.URL{}
-	if result.Next() {
-		err := result.Scan(&url.ID, &url.ShortURL, &url.URL)
+	if rows.Next() {
+		err := rows.Scan(&url.ID, &url.ShortURL, &url.URL)
 		if err != nil {
 			logger.LogSugar.Errorf("При обработке значений в FindByShortURL(%s) произошла ошибка %s", shortURL, err)
 			return nil, err
@@ -70,7 +75,7 @@ func (p *PostgresStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 func (p *PostgresStorage) FindByURL(url string) (*models.URL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
-	result, err := p.DB.QueryContext(
+	rows, err := p.DB.QueryContext(
 		ctx,
 		"select id, short_url, url from url_list where url = $1 limit 1",
 		url,
@@ -79,9 +84,14 @@ func (p *PostgresStorage) FindByURL(url string) (*models.URL, error) {
 		logger.LogSugar.Errorf("При вызове FindByURL(%s) произошла ошибка %s", url, err)
 		return nil, err
 	}
+	err = rows.Err()
+	if err != nil {
+		logger.LogSugar.Errorf("При вызове FindByShortURL(%s) произошла ошибка %s", url, err)
+		return nil, err
+	}
 	modelURL := models.URL{}
-	if result.Next() {
-		err := result.Scan(&modelURL.ID, &modelURL.ShortURL, &modelURL.URL)
+	if rows.Next() {
+		err := rows.Scan(&modelURL.ID, &modelURL.ShortURL, &modelURL.URL)
 		if err != nil {
 			logger.LogSugar.Errorf("При обработке значений в FindByURL(%s) произошла ошибка %s", url, err)
 			return nil, err
