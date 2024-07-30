@@ -11,8 +11,14 @@ import (
 	"time"
 )
 
+type DBQuery interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	PingContext(ctx context.Context) error
+}
+
 type PostgresStorage struct {
-	DB *sql.DB
+	DB DBQuery
 }
 
 // NewPostgresStorage PostgresStorage настройка подключения к БД
