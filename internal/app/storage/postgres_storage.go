@@ -15,6 +15,7 @@ type DBQuery interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	PingContext(ctx context.Context) error
+	Begin() (*sql.Tx, error)
 }
 
 type PostgresStorage struct {
@@ -112,6 +113,37 @@ func (p *PostgresStorage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
 	return p.DB.PingContext(ctx)
+}
+
+// MultiAdd Вставка значений в бд пачками
+func (p *PostgresStorage) MultiAdd(urls []models.URL) error {
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	tx, err := p.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	prepareInsert, err := tx.PrepareContext(ctx, `insert into url_list (short_url, url) values ($1, $2)`)
+	if err != nil {
+		return err
+	}
+	for _, url := range urls {
+		_, err := prepareInsert.ExecContext(ctx, url.ShortURL, url.URL)
+		if err != nil {
+			logger.LogSugar.Errorf("Значение %#v не добавлено в таблицу url_list", url)
+			errR := tx.Rollback()
+			if errR != nil {
+				logger.LogSugar.Errorf("откат транзакции вызвал сбой: %s", errR)
+			}
+			return err
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // createTable создаёт необходимую таблицу при её отсутсвии

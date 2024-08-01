@@ -27,6 +27,7 @@ func AppRoutes(shortURLService *url.ShortURLService) chi.Router {
 	r.Get("/{id}", redirectHandler.RedirectHandler)
 	r.Post("/api/shorten", shortenerHandler.ShortenerJSONHandler)
 	r.Get("/ping", pingHandler.CheckStorageConnect)
+	r.Post("/api/shorten/batch", shortenerHandler.ShortenerBatch)
 
 	return r
 }

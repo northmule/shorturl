@@ -31,6 +31,9 @@ func (m *MockPostgresStorageOk) FindByURL(url string) (*models.URL, error) {
 func (m *MockPostgresStorageOk) Ping() error {
 	return nil
 }
+func (m *MockPostgresStorageOk) MultiAdd(url []models.URL) error {
+	return nil
+}
 
 type MockPostgresStorageBad struct {
 	mock.Mock
@@ -48,6 +51,9 @@ func (m *MockPostgresStorageBad) FindByURL(url string) (*models.URL, error) {
 func (m *MockPostgresStorageBad) Ping() error {
 	args := m.Called()
 	return args.Error(0)
+}
+func (m *MockPostgresStorageBad) MultiAdd(url []models.URL) error {
+	return nil
 }
 
 func TestPingHandler_CheckStorageConnect(t *testing.T) {

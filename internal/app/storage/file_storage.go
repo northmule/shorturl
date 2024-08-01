@@ -45,6 +45,16 @@ func (f *FileStorage) Add(url models.URL) error {
 	return nil
 }
 
+func (f *FileStorage) MultiAdd(urls []models.URL) error {
+	for _, url := range urls {
+		err := f.Add(url)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // FindByShortURL поиск по короткой ссылке
 func (f *FileStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	for _, value := range f.cacheValues {

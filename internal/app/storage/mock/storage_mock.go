@@ -40,6 +40,21 @@ func (m *MockDBQuery) EXPECT() *MockDBQueryMockRecorder {
 	return m.recorder
 }
 
+// Begin mocks base method.
+func (m *MockDBQuery) Begin() (*sql.Tx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Begin")
+	ret0, _ := ret[0].(*sql.Tx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Begin indicates an expected call of Begin.
+func (mr *MockDBQueryMockRecorder) Begin() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin", reflect.TypeOf((*MockDBQuery)(nil).Begin))
+}
+
 // ExecContext mocks base method.
 func (m *MockDBQuery) ExecContext(arg0 context.Context, arg1 string, arg2 ...any) (sql.Result, error) {
 	m.ctrl.T.Helper()

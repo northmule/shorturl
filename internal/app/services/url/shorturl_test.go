@@ -2,6 +2,7 @@ package url
 
 import (
 	"fmt"
+	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"testing"
 )
@@ -39,6 +40,10 @@ func (s *storageMock) FindByURL(url string) (*models.URL, error) {
 }
 
 func (s *storageMock) Ping() error {
+	return nil
+}
+
+func (s *storageMock) MultiAdd(urls []models.URL) error {
 	return nil
 }
 
@@ -158,6 +163,53 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 			if tt.wantData.URL != shortURLResult.URL {
 				t.Errorf("EncodeShortURL() got = %v, want %v", shortURLResult.URL, tt.wantData.URL)
 			}
+		})
+	}
+}
+
+func TestShortURLService_DecodeURLs(t *testing.T) {
+	storageMock := storage.NewMemoryStorage()
+
+	tests := []struct {
+		name    string
+		Storage StorageInterface
+		urls    []string
+		wantErr bool
+	}{
+		{
+			name:    "#1_много_url",
+			Storage: storageMock,
+			urls: []string{
+				"https://habr.com/ru/feed/",
+				"https://habr.com/ru/companies/gazprombank/articles/832810/",
+				"https://habr.com/ru/companies/f_a_c_c_t/news/833140/",
+				"https://habr.com/ru/news/833130/",
+				"https://habr.com/ru/companies/kts/news/833080/",
+				"https://habr.com/ru/companies/aenix/news/833030/",
+				"https://habr.com/ru/companies/alfa/articles/",
+				"https://habr.com/ru/companies/otus/articles/",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &ShortURLService{
+				Storage:      tt.Storage,
+				shortURLData: ShortURLData{},
+			}
+			_, err := s.DecodeURLs(tt.urls)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DecodeURL() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			for _, url := range tt.urls {
+				_, err := s.Storage.FindByURL(url)
+				if err != nil {
+					t.Errorf("DecodeURL() error = %v", err)
+				}
+			}
+
 		})
 	}
 }
