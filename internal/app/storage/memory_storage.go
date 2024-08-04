@@ -38,6 +38,16 @@ func (s *MemoryStorage) Add(url models.URL) error {
 	return nil
 }
 
+func (s *MemoryStorage) MultiAdd(urls []models.URL) error {
+	for _, url := range urls {
+		err := s.Add(url)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // FindByShortURL поиск по короткой ссылке
 func (s *MemoryStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	s.mx.RLock()
@@ -64,4 +74,8 @@ func (s *MemoryStorage) FindByURL(url string) (*models.URL, error) {
 
 func (s *MemoryStorage) GetAll() (*map[string]models.URL, error) {
 	return s.db, nil
+}
+
+func (s *MemoryStorage) Ping() error {
+	return nil
 }

@@ -25,6 +25,8 @@ type StorageInterface interface {
 	Add(url models.URL) error
 	FindByShortURL(shortURL string) (*models.URL, error)
 	FindByURL(url string) (*models.URL, error)
+	Ping() error
+	MultiAdd(urls []models.URL) error
 }
 
 func NewShortURLService(storage StorageInterface) *ShortURLService {
@@ -47,6 +49,22 @@ func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) 
 		return nil, fmt.Errorf("не удалось сохранить URL %s", url)
 	}
 	return &s.shortURLData, nil
+}
+
+// DecodeURLs преобразование массива url
+func (s *ShortURLService) DecodeURLs(urls []string) ([]models.URL, error) {
+	modelURLs := make([]models.URL, 0)
+	for _, url := range urls {
+		modelURLs = append(modelURLs, models.URL{
+			URL:      url,
+			ShortURL: newRandomString(ShortURLDefaultSize),
+		})
+	}
+	err := s.Storage.MultiAdd(modelURLs)
+	if err != nil {
+		return nil, err
+	}
+	return modelURLs, nil
 }
 
 // EncodeShortURL вернёт полный url
