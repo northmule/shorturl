@@ -6,14 +6,14 @@ import (
 	"sync"
 )
 
-// Storage структура хранилища
-type Storage struct {
+// MemoryStorage структура хранилища
+type MemoryStorage struct {
 	db *map[string]models.URL
 	// Синхронизация конккуретного доступа
 	mx sync.RWMutex
 }
 
-func NewStorage() *Storage {
+func NewMemoryStorage() *MemoryStorage {
 	databaseData := make(map[string]models.URL, 1000)
 	// Демо данные
 	databaseData["e98192e19505472476a49f10388428ab"] = models.URL{
@@ -22,14 +22,15 @@ func NewStorage() *Storage {
 		URL:      "https://ya.ru",
 	}
 
-	storage := Storage{
+	instance := MemoryStorage{
 		db: &databaseData,
 	}
-	return &storage
+
+	return &instance
 }
 
 // Add добавление нового значения
-func (s *Storage) Add(url models.URL) error {
+func (s *MemoryStorage) Add(url models.URL) error {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	data := *s.db
@@ -38,7 +39,7 @@ func (s *Storage) Add(url models.URL) error {
 }
 
 // FindByShortURL поиск по короткой ссылке
-func (s *Storage) FindByShortURL(shortURL string) (*models.URL, error) {
+func (s *MemoryStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 	data := *s.db
@@ -50,7 +51,7 @@ func (s *Storage) FindByShortURL(shortURL string) (*models.URL, error) {
 }
 
 // FindByURL поиск по URL
-func (s *Storage) FindByURL(url string) (*models.URL, error) {
+func (s *MemoryStorage) FindByURL(url string) (*models.URL, error) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 	for _, modelURL := range *s.db {
@@ -59,4 +60,8 @@ func (s *Storage) FindByURL(url string) (*models.URL, error) {
 		}
 	}
 	return nil, fmt.Errorf("the url link was not found")
+}
+
+func (s *MemoryStorage) GetAll() (*map[string]models.URL, error) {
+	return s.db, nil
 }

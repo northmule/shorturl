@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/northmule/shorturl/internal/app/handlers/middlewarehandler"
 	"net/http"
 )
 
@@ -14,11 +15,15 @@ func AppRoutes(shortURLService ShortURLServiceInterface) chi.Router {
 		w.Write([]byte("method not expect\n"))
 	})
 
+	r.Use(middlewarehandler.MiddlewareLogger)
+	r.Use(middlewarehandler.MiddlewareGzipCompressor)
+
 	shortenerHandler := NewShortenerHandler(shortURLService)
 	redirectHandler := NewRedirectHandler(shortURLService)
 
 	r.Post("/", shortenerHandler.ShortenerHandler)
 	r.Get("/{id}", redirectHandler.RedirectHandler)
+	r.Post("/api/shorten", shortenerHandler.ShortenerJSONHandler)
 
 	return r
 }
