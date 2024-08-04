@@ -81,6 +81,14 @@ func (f *FileStorage) Close() error {
 	return f.file.Close()
 }
 
+func (f *FileStorage) Ping() error {
+	_, err := os.Stat(f.file.Name())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // restoreStorage восстановит бд из переданного значения
 func (f *FileStorage) restoreStorage() {
 	for f.scanner.Scan() {

@@ -38,6 +38,10 @@ func (s *storageMock) FindByURL(url string) (*models.URL, error) {
 	return nil, fmt.Errorf("the url link was not found")
 }
 
+func (s *storageMock) Ping() error {
+	return nil
+}
+
 func TestShortURLService_DecodeURL(t *testing.T) {
 	storageMock := &storageMock{
 		db: &map[string]models.URL{},
