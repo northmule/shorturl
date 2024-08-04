@@ -29,10 +29,15 @@ func run() error {
 		return err
 	}
 
-	var shortURLService handlers.ShortURLServiceInterface
 	var storage url.StorageInterface
 
-	if config.AppConfig.FileStoragePath != "" {
+	if config.AppConfig.DataBaseDsn != "" {
+		storage, err = appStorage.NewPostgresStorage(config.AppConfig.DataBaseDsn)
+		if err != nil {
+			logger.LogSugar.Errorf("Failed NewPostgresStorage dsn: %s, %s", config.AppConfig.DataBaseDsn, err)
+			return err
+		}
+	} else if config.AppConfig.FileStoragePath != "" {
 		file, err := os.OpenFile(config.AppConfig.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			logger.LogSugar.Errorf("Failed to open file %s: error: %s", config.AppConfig.FileStoragePath, err)
@@ -42,7 +47,7 @@ func run() error {
 	} else {
 		storage = appStorage.NewMemoryStorage()
 	}
-	shortURLService = url.NewShortURLService(storage)
+	shortURLService := url.NewShortURLService(storage)
 	fmt.Println("Running server on - ", config.AppConfig.ServerURL)
 	return http.ListenAndServe(config.AppConfig.ServerURL, handlers.AppRoutes(shortURLService))
 }
