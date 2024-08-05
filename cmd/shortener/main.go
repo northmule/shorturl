@@ -24,25 +24,30 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	_, err = config.Init()
+	cfg, err := config.NewConfig()
 	if err != nil {
 		return err
 	}
 
-	var shortURLService handlers.ShortURLServiceInterface
 	var storage url.StorageInterface
 
-	if config.AppConfig.FileStoragePath != "" {
-		file, err := os.OpenFile(config.AppConfig.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if cfg.DataBaseDsn != "" {
+		storage, err = appStorage.NewPostgresStorage(cfg.DataBaseDsn)
 		if err != nil {
-			logger.LogSugar.Errorf("Failed to open file %s: error: %s", config.AppConfig.FileStoragePath, err)
+			logger.LogSugar.Errorf("Failed NewPostgresStorage dsn: %s, %s", cfg.DataBaseDsn, err)
+			return err
+		}
+	} else if cfg.FileStoragePath != "" {
+		file, err := os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			logger.LogSugar.Errorf("Failed to open file %s: error: %s", cfg.FileStoragePath, err)
 			return err
 		}
 		storage = appStorage.NewFileStorage(file)
 	} else {
 		storage = appStorage.NewMemoryStorage()
 	}
-	shortURLService = url.NewShortURLService(storage)
-	fmt.Println("Running server on - ", config.AppConfig.ServerURL)
-	return http.ListenAndServe(config.AppConfig.ServerURL, handlers.AppRoutes(shortURLService))
+	shortURLService := url.NewShortURLService(storage)
+	fmt.Println("Running server on - ", cfg.ServerURL)
+	return http.ListenAndServe(cfg.ServerURL, handlers.AppRoutes(shortURLService))
 }
