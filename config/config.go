@@ -39,8 +39,8 @@ type InitConfig interface {
 // AppConfig глобальная переменная конфигурации
 var AppConfig Config
 
-// Init Инициализация конфигурации приложения
-func Init() (InitConfig, error) {
+// NewConfig Инициализация конфигурации приложения
+func NewConfig() (*Config, error) {
 	AppConfig = Config{}
 	err := AppConfig.InitEnvConfig()
 	if err != nil {
@@ -51,7 +51,6 @@ func Init() (InitConfig, error) {
 		return nil, err
 	}
 	return &AppConfig, nil
-
 }
 
 func (c *Config) InitEnvConfig() error {

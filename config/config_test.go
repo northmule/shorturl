@@ -82,7 +82,7 @@ func TestAFlagAndBFlag(t *testing.T) {
 			os.Args = args
 
 			// Инициализация после подготовки флагов и переменных
-			Init()
+			NewConfig()
 
 			if tt.want.ServerURL != AppConfig.ServerURL {
 				t.Errorf("Ожидается %#v пришло %#v", tt.want.ServerURL, AppConfig.ServerURL)
