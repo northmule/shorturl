@@ -2,7 +2,9 @@ package url
 
 import (
 	"errors"
-	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"math/rand"
 	"time"
@@ -46,7 +48,11 @@ func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) 
 		URL:      s.shortURLData.URL,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("не удалось сохранить URL %s", url)
+		var pgErr *pgconn.PgError
+		if !errors.As(err, &pgErr) || pgErr.Code != storage.CodeErrorDuplicateKey {
+			logger.LogSugar.Errorf("не удалось сохранить URL %s", url)
+		}
+		return nil, err
 	}
 	return &s.shortURLData, nil
 }

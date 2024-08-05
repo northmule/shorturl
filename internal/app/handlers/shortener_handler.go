@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/services/url"
+	"github.com/northmule/shorturl/internal/app/storage"
 	"io"
 	"net/http"
 	"regexp"
@@ -48,13 +51,33 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 	res.Header().Set("content-type", "text/plain")
 
 	shortURLData, err := s.service.DecodeURL(string(bodyValue))
+	var headerStatus int
+	isURLExists := false
+	var shortURL string
 	if err != nil {
-		http.Error(res, "error decode url", http.StatusBadRequest)
-		return
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == storage.CodeErrorDuplicateKey {
+			isURLExists = true
+		} else {
+			http.Error(res, "error decode url", http.StatusBadRequest)
+			return
+		}
+	}
+	if isURLExists {
+		modelURL, err := s.service.Storage.FindByURL(string(bodyValue))
+		if err != nil {
+			http.Error(res, "error find model", http.StatusBadRequest)
+			return
+		}
+		headerStatus = http.StatusConflict
+		shortURL = modelURL.ShortURL
+	} else {
+		headerStatus = http.StatusCreated
+		shortURL = shortURLData.ShortURL
 	}
 
-	res.WriteHeader(http.StatusCreated)
-	shortURL := fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURLData.ShortURL)
+	res.WriteHeader(headerStatus)
+	shortURL = fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURL)
 	_, err = res.Write([]byte(shortURL))
 	if err != nil {
 		http.Error(res, "error write data", http.StatusBadRequest)
@@ -94,14 +117,35 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 
 	res.Header().Set("content-type", "application/json")
 
+	var responseJSON JSONResponse
+	var headerStatus int
+	var shortURL string
 	shortURLData, err := s.service.DecodeURL(shortenerRequest.URL)
+	isURLExists := false
 	if err != nil {
-		http.Error(res, "error decode url", http.StatusBadRequest)
-		return
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == storage.CodeErrorDuplicateKey {
+			isURLExists = true
+		} else {
+			http.Error(res, "error decode url", http.StatusBadRequest)
+			return
+		}
 	}
 
-	responseJSON := JSONResponse{
-		Result: fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURLData.ShortURL),
+	if isURLExists {
+		modelURL, err := s.service.Storage.FindByURL(shortenerRequest.URL)
+		if err != nil {
+			http.Error(res, "error find model", http.StatusBadRequest)
+			return
+		}
+		headerStatus = http.StatusConflict
+		shortURL = modelURL.ShortURL
+	} else {
+		headerStatus = http.StatusCreated
+		shortURL = shortURLData.ShortURL
+	}
+	responseJSON = JSONResponse{
+		Result: fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURL),
 	}
 	responseString, err := json.Marshal(responseJSON)
 	if err != nil {
@@ -109,7 +153,7 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 		return
 	}
 
-	res.WriteHeader(http.StatusCreated)
+	res.WriteHeader(headerStatus)
 
 	_, err = res.Write(responseString)
 	if err != nil {

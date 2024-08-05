@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const CodeErrorDuplicateKey = "23505"
+
 type DBQuery interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
@@ -42,7 +44,6 @@ func (p *PostgresStorage) Add(url models.URL) error {
 	defer cancel()
 	_, err := p.DB.ExecContext(ctx, "insert into url_list (short_url, url) values ($1, $2)", url.ShortURL, url.URL)
 	if err != nil {
-		logger.LogSugar.Errorf("Значение %#v не добавлено в таблицу url_list", url)
 		return err
 	}
 	return nil
@@ -54,7 +55,7 @@ func (p *PostgresStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	defer cancel()
 	rows, err := p.DB.QueryContext(
 		ctx,
-		"select id, short_url, url from url_list where short_url = $1 limit 1",
+		"select id, short_url, url from url_list where short_url = $1 and deleted_at is null limit 1",
 		shortURL,
 	)
 	if err != nil {
@@ -84,7 +85,7 @@ func (p *PostgresStorage) FindByURL(url string) (*models.URL, error) {
 	defer cancel()
 	rows, err := p.DB.QueryContext(
 		ctx,
-		"select id, short_url, url from url_list where url = $1 limit 1",
+		"select id, short_url, url from url_list where url = $1 and deleted_at is null limit 1",
 		url,
 	)
 	if err != nil {
@@ -159,8 +160,8 @@ func (p *PostgresStorage) createTable() error {
 					deleted_at timestamp NULL,
 					CONSTRAINT url_pk PRIMARY KEY (id)
 				);
-					CREATE INDEX IF NOT EXISTS url_short_url_idx ON public.url_list USING btree (short_url);
-					CREATE INDEX IF NOT EXISTS url_url_idx ON public.url_list USING btree (url)`,
+					CREATE UNIQUE INDEX IF NOT EXISTS url_list_url_idx ON public.url_list (url) WHERE deleted_at IS NULL;
+					CREATE INDEX IF NOT EXISTS short_url_idx ON public.url_list USING btree (short_url)`,
 	)
 	if err != nil {
 		logger.LogSugar.Errorf("Ошибка создания базы данных: %s", err)
