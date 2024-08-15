@@ -147,6 +147,98 @@ func (p *PostgresStorage) MultiAdd(urls []models.URL) error {
 	return nil
 }
 
+func (p *PostgresStorage) FindUserByLoginAndPasswordHash(login string, passwordHash string) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	rows, err := p.DB.QueryContext(
+		ctx,
+		"select id, name, login, password from users where login = $1 and password = $2 and deleted_at is null limit 1",
+		login,
+		passwordHash,
+	)
+	if err != nil {
+		logger.LogSugar.Errorf("При вызове FindUserByLoginAndPasswordHash(%s) произошла ошибка %s", login, err)
+		return nil, err
+	}
+	err = rows.Err()
+	if err != nil {
+		logger.LogSugar.Errorf("При вызове FindUserByLoginAndPasswordHash(%s) произошла ошибка %s", login, err)
+		return nil, err
+	}
+	user := models.User{}
+	if rows.Next() {
+		err := rows.Scan(&user.ID, &user.Name, &user.Login, &user.Password)
+		if err != nil {
+			logger.LogSugar.Errorf("При обработке значений в FindUserByLoginAndPasswordHash(%s) произошла ошибка %s", login, err)
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+func (p *PostgresStorage) FindUrlsByUserId(userId int) (*[]models.URL, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	rows, err := p.DB.QueryContext(
+		ctx,
+		`select ul.id, ul.short_url, ul.url from url_list as ul
+				left join user_short_url as usu on usu.url_id = ul.id
+				where usu.user_id = $1 order by ul.id asc`,
+		userId,
+	)
+	if err != nil {
+		logger.LogSugar.Errorf("При вызове FindUrlsByUserId(%d) произошла ошибка %s", userId, err)
+		return nil, err
+	}
+	err = rows.Err()
+	if err != nil {
+		logger.LogSugar.Errorf("При вызове FindUrlsByUserId(%d) произошла ошибка %s", userId, err)
+		return nil, err
+	}
+	var urls []models.URL
+	for rows.Next() {
+		var url models.URL
+		err := rows.Scan(&url.ID, &url.ShortURL, &url.URL)
+		if err != nil {
+			logger.LogSugar.Errorf("При обработке значений в FindUrlsByUserId(%d) произошла ошибка %s", userId, err)
+			return nil, err
+		}
+		urls = append(urls, url)
+	}
+
+	return &urls, nil
+}
+
+func (p *PostgresStorage) FindUserById(userId int) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	rows, err := p.DB.QueryContext(
+		ctx,
+		`select id, name, login, password from users where id = $1 and deleted_at is null limit 1`,
+		userId,
+	)
+	if err != nil {
+		logger.LogSugar.Errorf("При вызове FindUserById(%d) произошла ошибка %s", userId, err)
+		return nil, err
+	}
+	err = rows.Err()
+	if err != nil {
+		logger.LogSugar.Errorf("При вызове FindUserById(%d) произошла ошибка %s", userId, err)
+		return nil, err
+	}
+	var user models.User
+	if rows.Next() {
+		err := rows.Scan(&user.ID, &user.Name, &user.Login, &user.Password)
+		if err != nil {
+			logger.LogSugar.Errorf("При обработке значений в FindUserById(%d) произошла ошибка %s", userId, err)
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
 // createTable создаёт необходимую таблицу при её отсутсвии
 func (p *PostgresStorage) createTable() error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)

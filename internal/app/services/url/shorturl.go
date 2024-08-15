@@ -29,6 +29,9 @@ type StorageInterface interface {
 	FindByURL(url string) (*models.URL, error)
 	Ping() error
 	MultiAdd(urls []models.URL) error
+	FindUserByLoginAndPasswordHash(login string, passwordHash string) (*models.User, error)
+	FindUrlsByUserId(userId int) (*[]models.URL, error)
+	FindUserById(userId int) (*models.User, error)
 }
 
 func NewShortURLService(storage StorageInterface) *ShortURLService {
