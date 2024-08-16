@@ -125,7 +125,7 @@ func (p *PostgresStorage) MultiAdd(urls []models.URL) error {
 		return err
 	}
 
-	prepareInsert, err := tx.PrepareContext(ctx, `insert into url_list (short_url, url) values ($1, $2)`)
+	prepareInsert, err := tx.PrepareContext(ctx, `insert into url_list (short_url, url) values ($1, $2) ON CONFLICT (url) where deleted_at IS NULL DO NOTHING;`)
 	if err != nil {
 		return err
 	}

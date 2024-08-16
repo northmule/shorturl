@@ -16,7 +16,7 @@ import (
 const addressAndPortDefault = ":8080"
 const baseAddressDefault = "http://localhost:8080"
 const pathFileStorage = "/tmp/short-url-db.json"
-const DataBaseConnectionTimeOut = 10
+const DataBaseConnectionTimeOut = 100
 
 // Config Конфигурация приложения
 type Config struct {

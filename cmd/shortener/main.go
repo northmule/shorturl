@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/handlers"
 	"github.com/northmule/shorturl/internal/app/logger"
@@ -29,25 +28,35 @@ func run() error {
 		return err
 	}
 
-	var storage url.StorageInterface
+	storage, err := getStorage(cfg)
+	if err != nil {
+		return err
+	}
+
+	shortURLService := url.NewShortURLService(storage)
+	logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)
+	return http.ListenAndServe(cfg.ServerURL, handlers.AppRoutes(shortURLService))
+}
+
+func getStorage(cfg *config.Config) (url.StorageInterface, error) {
 
 	if cfg.DataBaseDsn != "" {
-		storage, err = appStorage.NewPostgresStorage(cfg.DataBaseDsn)
+		s, err := appStorage.NewPostgresStorage(cfg.DataBaseDsn)
 		if err != nil {
 			logger.LogSugar.Errorf("Failed NewPostgresStorage dsn: %s, %s", cfg.DataBaseDsn, err)
-			return err
+			return nil, err
 		}
-	} else if cfg.FileStoragePath != "" {
+		return s, nil
+	}
+
+	if cfg.FileStoragePath != "" {
 		file, err := os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			logger.LogSugar.Errorf("Failed to open file %s: error: %s", cfg.FileStoragePath, err)
-			return err
+			return nil, err
 		}
-		storage = appStorage.NewFileStorage(file)
-	} else {
-		storage = appStorage.NewMemoryStorage()
+		return appStorage.NewFileStorage(file), nil
 	}
-	shortURLService := url.NewShortURLService(storage)
-	fmt.Println("Running server on - ", cfg.ServerURL)
-	return http.ListenAndServe(cfg.ServerURL, handlers.AppRoutes(shortURLService))
+
+	return appStorage.NewMemoryStorage(), nil
 }

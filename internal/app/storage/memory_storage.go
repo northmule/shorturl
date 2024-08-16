@@ -40,6 +40,7 @@ func (s *MemoryStorage) Add(url models.URL) error {
 
 func (s *MemoryStorage) MultiAdd(urls []models.URL) error {
 	for _, url := range urls {
+		s.removeItemByURL(url.URL)
 		err := s.Add(url)
 		if err != nil {
 			return err
@@ -70,6 +71,14 @@ func (s *MemoryStorage) FindByURL(url string) (*models.URL, error) {
 		}
 	}
 	return nil, fmt.Errorf("the url link was not found")
+}
+
+func (s *MemoryStorage) removeItemByURL(url string) {
+	for shortURL, modelURL := range *s.db {
+		if modelURL.URL == url {
+			delete(*s.db, shortURL)
+		}
+	}
 }
 
 func (s *MemoryStorage) GetAll() (*map[string]models.URL, error) {

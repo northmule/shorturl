@@ -191,6 +191,22 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name:    "#2_пустой_список",
+			Storage: storageMock,
+			urls:    []string{},
+			wantErr: false,
+		},
+		{
+			name:    "#3_дубли",
+			Storage: storageMock,
+			urls: []string{
+				"https://habr.com/ru/feed/",
+				"https://habr.com/ru/feed/",
+				"https://habr.com/ru/feed/",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -209,7 +225,6 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 					t.Errorf("DecodeURL() error = %v", err)
 				}
 			}
-
 		})
 	}
 }
