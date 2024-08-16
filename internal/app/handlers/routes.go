@@ -22,7 +22,7 @@ func AppRoutes(shortURLService *url.ShortURLService) chi.Router {
 	r.Use(middlewarehandler.MiddlewareGzipCompressor)
 	r.Use(middlewarehandler.CheckAuth)
 
-	shortenerHandler := NewShortenerHandler(shortURLService)
+	shortenerHandler := NewShortenerHandler(shortURLService, shortURLService.Storage)
 	redirectHandler := NewRedirectHandler(shortURLService)
 	pingHandler := NewPingHandler(shortURLService.Storage)
 	jwtHandler := auth.NewJWTHandler(shortURLService.Storage)

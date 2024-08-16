@@ -8,6 +8,7 @@ import (
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/storage/models"
 	"io"
 	"net/http"
 	"regexp"
@@ -18,18 +19,24 @@ var regexURL = regexp.MustCompile(`(http|https)://\S+`)
 type ShortenerHandler struct {
 	regexURL *regexp.Regexp
 	service  *url.ShortURLService
+	finder   Finder
 }
 
 type ShortenerHandlerInterface interface {
 	ShortenerHandler(res http.ResponseWriter, req *http.Request)
 }
 
-func NewShortenerHandler(urlService *url.ShortURLService) ShortenerHandler {
+func NewShortenerHandler(urlService *url.ShortURLService, storage url.StorageInterface) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{
 		regexURL: regexURL,
 		service:  urlService,
+		finder:   storage,
 	}
 	return *shortenerHandler
+}
+
+type Finder interface {
+	FindByURL(url string) (*models.URL, error)
 }
 
 // ShortenerHandler обработчик создания короткой ссылки
@@ -50,30 +57,15 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 
 	res.Header().Set("content-type", "text/plain")
 
-	shortURLData, err := s.service.DecodeURL(string(bodyValue))
-	var headerStatus int
-	isURLExists := false
-	var shortURL string
+	var (
+		headerStatus int
+		shortURL     string
+	)
+
+	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(string(bodyValue))
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == storage.CodeErrorDuplicateKey {
-			isURLExists = true
-		} else {
-			http.Error(res, "error decode url", http.StatusBadRequest)
-			return
-		}
-	}
-	if isURLExists {
-		modelURL, err := s.service.Storage.FindByURL(string(bodyValue))
-		if err != nil {
-			http.Error(res, "error find model", http.StatusBadRequest)
-			return
-		}
-		headerStatus = http.StatusConflict
-		shortURL = modelURL.ShortURL
-	} else {
-		headerStatus = http.StatusCreated
-		shortURL = shortURLData.ShortURL
+		http.Error(res, "error find model", headerStatus)
+		return
 	}
 
 	res.WriteHeader(headerStatus)
@@ -117,33 +109,18 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 
 	res.Header().Set("content-type", "application/json")
 
-	var responseJSON JSONResponse
-	var headerStatus int
-	var shortURL string
-	shortURLData, err := s.service.DecodeURL(shortenerRequest.URL)
-	isURLExists := false
+	var (
+		responseJSON JSONResponse
+		headerStatus int
+		shortURL     string
+	)
+
+	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(shortenerRequest.URL)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == storage.CodeErrorDuplicateKey {
-			isURLExists = true
-		} else {
-			http.Error(res, "error decode url", http.StatusBadRequest)
-			return
-		}
+		http.Error(res, "error find model", headerStatus)
+		return
 	}
 
-	if isURLExists {
-		modelURL, err := s.service.Storage.FindByURL(shortenerRequest.URL)
-		if err != nil {
-			http.Error(res, "error find model", http.StatusBadRequest)
-			return
-		}
-		headerStatus = http.StatusConflict
-		shortURL = modelURL.ShortURL
-	} else {
-		headerStatus = http.StatusCreated
-		shortURL = shortURLData.ShortURL
-	}
 	responseJSON = JSONResponse{
 		Result: fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURL),
 	}
@@ -202,7 +179,7 @@ func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Req
 	}
 	res.Header().Set("content-type", "application/json")
 
-	responseItems := make([]BatchResponse, 0)
+	responseItems := make([]BatchResponse, 0, len(requestItems))
 	for _, requestItem := range requestItems {
 		for _, modelURL := range modelURLs {
 			if requestItem.OriginalURL == modelURL.URL {
@@ -227,4 +204,33 @@ func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Req
 		http.Error(res, "error write data", http.StatusBadRequest)
 		return
 	}
+}
+func (s *ShortenerHandler) fillShortURLAndResponseStatus(url string) (string, int, error) {
+	var (
+		headerStatus int
+		shortURL     string
+		isURLExists  bool
+	)
+	shortURLData, err := s.service.DecodeURL(url)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == storage.CodeErrorDuplicateKey {
+			isURLExists = true
+		} else {
+			return "", http.StatusInternalServerError, err
+		}
+	}
+	if isURLExists {
+		modelURL, err := s.finder.FindByURL(url)
+		if err != nil {
+			return "", http.StatusInternalServerError, err
+		}
+		headerStatus = http.StatusConflict
+		shortURL = modelURL.ShortURL
+	} else {
+		headerStatus = http.StatusCreated
+		shortURL = shortURLData.ShortURL
+	}
+
+	return shortURL, headerStatus, nil
 }

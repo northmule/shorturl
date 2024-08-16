@@ -81,7 +81,7 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 			wantCode: http.StatusOK,
 		},
 		{
-			name:     "MemoryStorage",
+			name:     "FileStorage",
 			storage:  storage.NewFileStorage(file),
 			wantBody: "Ok",
 			wantCode: http.StatusOK,
