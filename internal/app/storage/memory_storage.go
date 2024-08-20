@@ -35,18 +35,27 @@ func NewMemoryStorage() *MemoryStorage {
 }
 
 // Add добавление нового значения
-func (s *MemoryStorage) Add(url models.URL) error {
+func (s *MemoryStorage) Add(url models.URL) (int64, error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	data := *s.db
 	data[url.ShortURL] = url
+	return 1, nil
+}
+
+func (s *MemoryStorage) CreateUser(user models.User) (int64, error) {
+	return 0, nil
+}
+
+func (s *MemoryStorage) LikeURLToUser(urlID int64, userUUID string) error {
+	//todo
 	return nil
 }
 
 func (s *MemoryStorage) MultiAdd(urls []models.URL) error {
 	for _, url := range urls {
 		s.removeItemByURL(url.URL)
-		err := s.Add(url)
+		_, err := s.Add(url)
 		if err != nil {
 			return err
 		}
@@ -97,6 +106,6 @@ func (s *MemoryStorage) Ping() error {
 func (s *MemoryStorage) FindUserByLoginAndPasswordHash(login string, password string) (*models.User, error) {
 	return nil, nil
 }
-func (s *MemoryStorage) FindUrlsByUserId(userId int) (*[]models.URL, error) {
+func (s *MemoryStorage) FindUrlsByUserId(userUUID string) (*[]models.URL, error) {
 	return nil, nil
 }

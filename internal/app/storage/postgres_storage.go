@@ -6,6 +6,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/storage/migrations"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	_ "go.uber.org/mock/mockgen/model"
 	"time"
@@ -18,6 +19,7 @@ type DBQuery interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	PingContext(ctx context.Context) error
 	Begin() (*sql.Tx, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
 type PostgresStorage struct {
@@ -39,14 +41,36 @@ func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
 }
 
 // Add добавление нового значения
-func (p *PostgresStorage) Add(url models.URL) error {
+func (p *PostgresStorage) Add(url models.URL) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
-	_, err := p.DB.ExecContext(ctx, "insert into url_list (short_url, url) values ($1, $2)", url.ShortURL, url.URL)
-	if err != nil {
-		return err
-	}
-	return nil
+	var urlID int64
+	// ON CONFLICT (url) where deleted_at IS NULL DO UPDATE SET url=$2
+	err := p.DB.QueryRowContext(ctx, "insert into url_list (short_url, url) values ($1, $2) returning id", url.ShortURL, url.URL).Scan(&urlID)
+	return urlID, err
+}
+
+// CreateUser добавление нового значения
+func (p *PostgresStorage) CreateUser(user models.User) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	var insertID int64
+	_ = p.DB.QueryRowContext(
+		ctx,
+		"insert into users (name, login, password, uuid) values ($1, $2, $3, $4) returning id",
+		user.Name,
+		user.Login,
+		user.Password,
+		user.UUID,
+	).Scan(&insertID)
+	return insertID, nil
+}
+
+func (p *PostgresStorage) LikeURLToUser(urlID int64, userUUID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	_, err := p.DB.ExecContext(ctx, "insert into user_short_url (user_id, url_id) values ((select id from users where uuid=$1 limit 1), $2)", userUUID, urlID)
+	return err
 }
 
 // FindByShortURL поиск по короткой ссылке
@@ -177,23 +201,23 @@ func (p *PostgresStorage) FindUserByLoginAndPasswordHash(login string, passwordH
 	return &user, nil
 }
 
-func (p *PostgresStorage) FindUrlsByUserId(userId int) (*[]models.URL, error) {
+func (p *PostgresStorage) FindUrlsByUserId(userUUID string) (*[]models.URL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
 	rows, err := p.DB.QueryContext(
 		ctx,
 		`select ul.id, ul.short_url, ul.url from url_list as ul
-				left join user_short_url as usu on usu.url_id = ul.id
-				where usu.user_id = $1 order by ul.id asc`,
-		userId,
+				left join user_short_url as usu on usu.url_id=ul.id
+				where usu.user_id=(select id from users where uuid=$1 limit 1) order by ul.id asc`,
+		userUUID,
 	)
 	if err != nil {
-		logger.LogSugar.Errorf("При вызове FindUrlsByUserId(%d) произошла ошибка %s", userId, err)
+		logger.LogSugar.Errorf("При вызове FindUrlsByUserId(%s) произошла ошибка %s", userUUID, err)
 		return nil, err
 	}
 	err = rows.Err()
 	if err != nil {
-		logger.LogSugar.Errorf("При вызове FindUrlsByUserId(%d) произошла ошибка %s", userId, err)
+		logger.LogSugar.Errorf("При вызове FindUrlsByUserId(%s) произошла ошибка %s", userUUID, err)
 		return nil, err
 	}
 	var urls []models.URL
@@ -201,7 +225,7 @@ func (p *PostgresStorage) FindUrlsByUserId(userId int) (*[]models.URL, error) {
 		var url models.URL
 		err := rows.Scan(&url.ID, &url.ShortURL, &url.URL)
 		if err != nil {
-			logger.LogSugar.Errorf("При обработке значений в FindUrlsByUserId(%d) произошла ошибка %s", userId, err)
+			logger.LogSugar.Errorf("При обработке значений в FindUrlsByUserId(%s) произошла ошибка %s", userUUID, err)
 			return nil, err
 		}
 		urls = append(urls, url)
@@ -243,22 +267,28 @@ func (p *PostgresStorage) FindUserById(userId int) (*models.User, error) {
 func (p *PostgresStorage) createTable() error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
-	_, err := p.DB.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS public.url_list (
-					id int8 GENERATED ALWAYS AS IDENTITY NOT NULL,
-					short_url varchar(100) NOT NULL,
-					url varchar(2000) NOT NULL,
-					created_at timestamp DEFAULT now() NOT NULL,
-					deleted_at timestamp NULL,
-					CONSTRAINT url_pk PRIMARY KEY (id)
-				);
-					CREATE UNIQUE INDEX IF NOT EXISTS url_list_url_idx ON public.url_list (url) WHERE deleted_at IS NULL;
-					CREATE INDEX IF NOT EXISTS short_url_idx ON public.url_list USING btree (short_url)`,
-	)
+
+	logger.LogSugar.Info("Попытка создать таблицу url_list")
+	_, err := p.DB.ExecContext(ctx, migrations.Migrations01)
 	if err != nil {
-		logger.LogSugar.Errorf("Ошибка создания базы данных: %s", err)
+		logger.LogSugar.Errorf("Ошибка создания таблицы: %s", err)
 		return err
 	}
-	logger.LogSugar.Info("Создание таблицы завершено")
+
+	logger.LogSugar.Info("Попытка создать таблицу users")
+	_, err = p.DB.ExecContext(ctx, migrations.Migrations02)
+	if err != nil {
+		logger.LogSugar.Errorf("Ошибка создания таблицы: %s", err)
+		return err
+	}
+
+	logger.LogSugar.Info("Попытка создать таблицу user_short_url")
+	_, err = p.DB.ExecContext(ctx, migrations.Migrations03)
+	if err != nil {
+		logger.LogSugar.Errorf("Ошибка создания таблицы: %s", err)
+		return err
+	}
+
+	logger.LogSugar.Info("Создание таблиц завершено")
 	return nil
 }

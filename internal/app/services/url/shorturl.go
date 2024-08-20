@@ -15,6 +15,7 @@ const ShortURLDefaultSize = 6
 type ShortURLData struct {
 	URL      string
 	ShortURL string
+	URLID    int64
 }
 
 type ShortURLService struct {
@@ -24,13 +25,15 @@ type ShortURLService struct {
 
 // StorageInterface методы
 type StorageInterface interface {
-	Add(url models.URL) error
+	Add(url models.URL) (int64, error)
+	CreateUser(user models.User) (int64, error)
+	LikeURLToUser(urlID int64, userUUID string) error
 	FindByShortURL(shortURL string) (*models.URL, error)
 	FindByURL(url string) (*models.URL, error)
 	Ping() error
 	MultiAdd(urls []models.URL) error
 	FindUserByLoginAndPasswordHash(login string, passwordHash string) (*models.User, error)
-	FindUrlsByUserId(userId int) (*[]models.URL, error)
+	FindUrlsByUserId(userUUID string) (*[]models.URL, error)
 	FindUserById(userId int) (*models.User, error)
 }
 
@@ -44,9 +47,15 @@ func NewShortURLService(storage StorageInterface) *ShortURLService {
 
 // DecodeURL вернёт короткий url
 func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) {
-	s.shortURLData.ShortURL = newRandomString(ShortURLDefaultSize)
+	modelURL, err := s.Storage.FindByURL(url)
+	if err == nil {
+		s.shortURLData.ShortURL = modelURL.ShortURL
+	} else {
+		s.shortURLData.ShortURL = newRandomString(ShortURLDefaultSize)
+	}
+
 	s.shortURLData.URL = url
-	err = s.Storage.Add(models.URL{
+	urlID, err := s.Storage.Add(models.URL{
 		ShortURL: s.shortURLData.ShortURL,
 		URL:      s.shortURLData.URL,
 	})
@@ -57,6 +66,7 @@ func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) 
 		}
 		return nil, err
 	}
+	s.shortURLData.URLID = urlID
 	return &s.shortURLData, nil
 }
 

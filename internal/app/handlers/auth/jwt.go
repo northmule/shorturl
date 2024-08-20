@@ -12,7 +12,7 @@ import (
 )
 
 const JWTTokenExp = time.Hour * 3
-const JWTSecretKey = "У вас ус отклеился"
+const JWTSecretKey = "super_secret_key"
 
 type JWTAuth struct {
 	storage url.StorageInterface
@@ -98,8 +98,4 @@ func (j *JWTAuth) Auth(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "error write data", http.StatusBadRequest)
 		return
 	}
-}
-
-func (j *JWTAuth) Valid(res http.ResponseWriter, req *http.Request) {
-	// todo
 }
