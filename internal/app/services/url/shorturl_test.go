@@ -36,7 +36,7 @@ func (s *storageMock) FindByURL(url string) (*models.URL, error) {
 			return &modelURL, nil
 		}
 	}
-	return nil, fmt.Errorf("the url link was not found")
+	return new(models.URL), nil
 }
 
 func (s *storageMock) Ping() error {
