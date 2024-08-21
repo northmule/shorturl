@@ -201,7 +201,7 @@ func (p *PostgresStorage) FindUserByLoginAndPasswordHash(login string, passwordH
 	return &user, nil
 }
 
-func (p *PostgresStorage) FindUrlsByUserId(userUUID string) (*[]models.URL, error) {
+func (p *PostgresStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
 	rows, err := p.DB.QueryContext(
@@ -212,12 +212,12 @@ func (p *PostgresStorage) FindUrlsByUserId(userUUID string) (*[]models.URL, erro
 		userUUID,
 	)
 	if err != nil {
-		logger.LogSugar.Errorf("При вызове FindUrlsByUserId(%s) произошла ошибка %s", userUUID, err)
+		logger.LogSugar.Errorf("При вызове FindUrlsByUserID(%s) произошла ошибка %s", userUUID, err)
 		return nil, err
 	}
 	err = rows.Err()
 	if err != nil {
-		logger.LogSugar.Errorf("При вызове FindUrlsByUserId(%s) произошла ошибка %s", userUUID, err)
+		logger.LogSugar.Errorf("При вызове FindUrlsByUserID(%s) произошла ошибка %s", userUUID, err)
 		return nil, err
 	}
 	var urls []models.URL
@@ -225,42 +225,13 @@ func (p *PostgresStorage) FindUrlsByUserId(userUUID string) (*[]models.URL, erro
 		var url models.URL
 		err := rows.Scan(&url.ID, &url.ShortURL, &url.URL)
 		if err != nil {
-			logger.LogSugar.Errorf("При обработке значений в FindUrlsByUserId(%s) произошла ошибка %s", userUUID, err)
+			logger.LogSugar.Errorf("При обработке значений в FindUrlsByUserID(%s) произошла ошибка %s", userUUID, err)
 			return nil, err
 		}
 		urls = append(urls, url)
 	}
 
 	return &urls, nil
-}
-
-func (p *PostgresStorage) FindUserById(userId int) (*models.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
-	defer cancel()
-	rows, err := p.DB.QueryContext(
-		ctx,
-		`select id, name, login, password from users where id = $1 and deleted_at is null limit 1`,
-		userId,
-	)
-	if err != nil {
-		logger.LogSugar.Errorf("При вызове FindUserById(%d) произошла ошибка %s", userId, err)
-		return nil, err
-	}
-	err = rows.Err()
-	if err != nil {
-		logger.LogSugar.Errorf("При вызове FindUserById(%d) произошла ошибка %s", userId, err)
-		return nil, err
-	}
-	var user models.User
-	if rows.Next() {
-		err := rows.Scan(&user.ID, &user.Name, &user.Login, &user.Password)
-		if err != nil {
-			logger.LogSugar.Errorf("При обработке значений в FindUserById(%d) произошла ошибка %s", userId, err)
-			return nil, err
-		}
-	}
-
-	return &user, nil
 }
 
 // createTable создаёт необходимую таблицу при её отсутсвии

@@ -13,10 +13,10 @@ type storageMock struct {
 }
 
 // Add добавление нового значения
-func (s *storageMock) Add(url models.URL) error {
+func (s *storageMock) Add(url models.URL) (int64, error) {
 	data := *s.db
 	data[url.ShortURL] = url
-	return nil
+	return 0, nil
 }
 
 // FindByShortURL поиск по короткой ссылке
@@ -45,6 +45,18 @@ func (s *storageMock) Ping() error {
 
 func (s *storageMock) MultiAdd(urls []models.URL) error {
 	return nil
+}
+
+func (s *storageMock) CreateUser(user models.User) (int64, error) {
+	return 0, nil
+}
+
+func (s *storageMock) LikeURLToUser(urlID int64, userUUID string) error {
+	return nil
+}
+
+func (s *storageMock) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
+	return nil, nil
 }
 
 func TestShortURLService_DecodeURL(t *testing.T) {
@@ -114,7 +126,7 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 	}
 	NewShortURLService(storageMock)
 
-	_ = storageMock.Add(models.URL{
+	_, _ = storageMock.Add(models.URL{
 		ShortURL: "123",
 		URL:      "https://example.ru",
 	})

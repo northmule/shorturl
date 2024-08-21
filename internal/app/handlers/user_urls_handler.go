@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/northmule/shorturl/config"
-	"github.com/northmule/shorturl/internal/app/handlers/auth"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/auntificator"
 	"github.com/northmule/shorturl/internal/app/services/url"
@@ -26,8 +25,8 @@ func NewUserUrlsHandler(storage url.StorageInterface, sessionStorage *storage.Se
 }
 
 type ResponseView struct {
-	ShortUrl    string `json:"short_Url"`
-	OriginalUrl string `json:"original_url"`
+	ShortURL    string `json:"short_Url"`
+	OriginalURL string `json:"original_url"`
 }
 
 // View коротки ссылки пользователя
@@ -35,7 +34,7 @@ func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	token := auntificator.GetUserToken(req)
 	if token == "" {
 		res.WriteHeader(http.StatusUnauthorized)
-		logger.LogSugar.Infof("Ожидалось значение cookie %s", auth.CookieAuthName)
+		logger.LogSugar.Infof("Ожидалось значение cookie %s", auntificator.CookieAuthName)
 		return
 	}
 	userUUID := "a4a45d8d-cd8b-47a7-a7a1-4bafcf3d83a5"
@@ -47,7 +46,7 @@ func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	userURLs, err := u.storage.FindUrlsByUserId(userUUID)
+	userURLs, err := u.storage.FindUrlsByUserID(userUUID)
 	if err != nil {
 		http.Error(res, "Ошибка получения ссылок пользователя", http.StatusInternalServerError)
 		logger.LogSugar.Error(err)
@@ -62,8 +61,8 @@ func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	var responseList []ResponseView
 	for _, urlItem := range *userURLs {
 		responseList = append(responseList, ResponseView{
-			ShortUrl:    fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, urlItem.ShortURL),
-			OriginalUrl: urlItem.URL,
+			ShortURL:    fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, urlItem.ShortURL),
+			OriginalURL: urlItem.URL,
 		})
 	}
 	responseURLs, err := json.Marshal(responseList)

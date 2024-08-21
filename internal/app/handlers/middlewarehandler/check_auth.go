@@ -3,6 +3,7 @@ package middlewarehandler
 import (
 	"context"
 	"github.com/google/uuid"
+	AppContext "github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/auntificator"
 	"github.com/northmule/shorturl/internal/app/services/url"
@@ -65,7 +66,8 @@ func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 		res.Header().Set("content-type", "text/plain; charset=utf-8")
 		res.Header().Set("Authorization", token)
 
-		ctx := context.WithValue(req.Context(), "userUUID", userUUID)
+		ctx := context.WithValue(req.Context(), AppContext.KeyContext, userUUID)
+
 		reqWithContext := req.WithContext(ctx)
 		next.ServeHTTP(res, reqWithContext)
 	})

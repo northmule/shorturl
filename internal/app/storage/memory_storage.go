@@ -13,11 +13,6 @@ type MemoryStorage struct {
 	mx sync.RWMutex
 }
 
-func (s *MemoryStorage) FindUserById(userId int) (*models.User, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewMemoryStorage() *MemoryStorage {
 	databaseData := make(map[string]models.URL, 1000)
 	// Демо данные
@@ -106,6 +101,6 @@ func (s *MemoryStorage) Ping() error {
 func (s *MemoryStorage) FindUserByLoginAndPasswordHash(login string, password string) (*models.User, error) {
 	return nil, nil
 }
-func (s *MemoryStorage) FindUrlsByUserId(userUUID string) (*[]models.URL, error) {
+func (s *MemoryStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	return nil, nil
 }

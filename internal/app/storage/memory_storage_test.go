@@ -30,7 +30,7 @@ func TestMemoryStorage_StorageMethods(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := storage.Add(tt.testData)
+			_, err := storage.Add(tt.testData)
 			if err != nil {
 				t.Errorf("Add() error = %#v", err)
 			}

@@ -17,11 +17,6 @@ type FileStorage struct {
 	cacheValues []string
 }
 
-func (f *FileStorage) FindUserById(userId int) (*models.User, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewFileStorage(file *os.File) *FileStorage {
 	instance := &FileStorage{
 		file:        file,
@@ -98,14 +93,14 @@ func (f *FileStorage) FindByURL(url string) (*models.URL, error) {
 			return &url, nil
 		}
 	}
-	return nil, fmt.Errorf("the url link was not found")
+	return new(models.URL), nil
 }
 
 func (f *FileStorage) FindUserByLoginAndPasswordHash(login string, password string) (*models.User, error) {
 	return nil, nil
 }
 
-func (f *FileStorage) FindUrlsByUserId(userUUID string) (*[]models.URL, error) {
+func (f *FileStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	return nil, nil
 }
 

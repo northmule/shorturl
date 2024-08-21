@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/northmule/shorturl/config"
+	"github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
@@ -67,9 +68,9 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 		headerStatus int
 		shortURL     string
 	)
-	userIdAny := req.Context().Value("userUUID")
+	userIDAny := req.Context().Value(context.KeyContext)
 	var userUUID string
-	if id, ok := userIdAny.(string); ok {
+	if id, ok := userIDAny.(string); ok {
 		userUUID = id
 	}
 	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(userUUID, string(bodyValue))
@@ -124,9 +125,9 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 		headerStatus int
 		shortURL     string
 	)
-	userIdAny := req.Context().Value("userUUID")
+	userIDAny := req.Context().Value(context.KeyContext)
 	var userUUID string
-	if id, ok := userIdAny.(string); ok {
+	if id, ok := userIDAny.(string); ok {
 		userUUID = id
 	}
 	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(userUUID, shortenerRequest.URL)

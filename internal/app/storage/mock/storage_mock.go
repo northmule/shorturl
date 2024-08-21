@@ -108,3 +108,22 @@ func (mr *MockDBQueryMockRecorder) QueryContext(arg0, arg1 any, arg2 ...any) *go
 	varargs := append([]any{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryContext", reflect.TypeOf((*MockDBQuery)(nil).QueryContext), varargs...)
 }
+
+// QueryRowContext mocks base method.
+func (m *MockDBQuery) QueryRowContext(arg0 context.Context, arg1 string, arg2 ...any) *sql.Row {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryRowContext", varargs...)
+	ret0, _ := ret[0].(*sql.Row)
+	return ret0
+}
+
+// QueryRowContext indicates an expected call of QueryRowContext.
+func (mr *MockDBQueryMockRecorder) QueryRowContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryRowContext", reflect.TypeOf((*MockDBQuery)(nil).QueryRowContext), varargs...)
+}

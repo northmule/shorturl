@@ -32,9 +32,7 @@ type StorageInterface interface {
 	FindByURL(url string) (*models.URL, error)
 	Ping() error
 	MultiAdd(urls []models.URL) error
-	FindUserByLoginAndPasswordHash(login string, passwordHash string) (*models.User, error)
-	FindUrlsByUserId(userUUID string) (*[]models.URL, error)
-	FindUserById(userId int) (*models.User, error)
+	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
 }
 
 func NewShortURLService(storage StorageInterface) *ShortURLService {
@@ -47,8 +45,8 @@ func NewShortURLService(storage StorageInterface) *ShortURLService {
 
 // DecodeURL вернёт короткий url
 func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) {
-	modelURL, err := s.Storage.FindByURL(url)
-	if err == nil {
+	modelURL, _ := s.Storage.FindByURL(url)
+	if modelURL.ShortURL != "" {
 		s.shortURLData.ShortURL = modelURL.ShortURL
 	} else {
 		s.shortURLData.ShortURL = newRandomString(ShortURLDefaultSize)
