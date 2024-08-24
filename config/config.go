@@ -5,6 +5,7 @@ import (
 	"github.com/caarlos0/env"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"os"
+	"strings"
 )
 
 // Приоритет параметров сервера должен быть таким:
@@ -15,6 +16,7 @@ import (
 const addressAndPortDefault = ":8080"
 const baseAddressDefault = "http://localhost:8080"
 const pathFileStorage = "/tmp/short-url-db.json"
+const DataBaseConnectionTimeOut = 100
 
 // Config Конфигурация приложения
 type Config struct {
@@ -25,6 +27,8 @@ type Config struct {
 	BaseShortURL string `env:"BASE_URL"`
 	// Путь для хранения ссылок
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	// Строка подключения к БД
+	DataBaseDsn string `env:"DATABASE_DSN"`
 }
 
 type InitConfig interface {
@@ -35,8 +39,8 @@ type InitConfig interface {
 // AppConfig глобальная переменная конфигурации
 var AppConfig Config
 
-// Init Инициализация конфигурации приложения
-func Init() (InitConfig, error) {
+// NewConfig Инициализация конфигурации приложения
+func NewConfig() (*Config, error) {
 	AppConfig = Config{}
 	err := AppConfig.InitEnvConfig()
 	if err != nil {
@@ -47,7 +51,6 @@ func Init() (InitConfig, error) {
 		return nil, err
 	}
 	return &AppConfig, nil
-
 }
 
 func (c *Config) InitEnvConfig() error {
@@ -76,6 +79,9 @@ func initFlagConfig(appConfig *Config) error {
 	flagBaseShortURLValue := configFlag.String("b", baseAddressDefault, "the base address of the resulting shortened URL")
 	// Если указан пустой флга, запись в файл отключается
 	flagFileStoragePath := configFlag.String("f", pathFileStorage, "the path to the file for storing links")
+	// Строка подключения базы данных
+	flagDataBaseDsn := configFlag.String("d", "", "specify the connection string to the database")
+
 	err := configFlag.Parse(os.Args[1:])
 	if err != nil {
 		logger.LogSugar.Error("configFlag.Parse error", err)
@@ -91,5 +97,10 @@ func initFlagConfig(appConfig *Config) error {
 	if appConfig.FileStoragePath == "" {
 		appConfig.FileStoragePath = *flagFileStoragePath
 	}
+	if appConfig.DataBaseDsn == "" {
+		appConfig.DataBaseDsn = *flagDataBaseDsn
+
+	}
+	appConfig.DataBaseDsn = strings.ReplaceAll(appConfig.DataBaseDsn, "\"", "")
 	return nil
 }

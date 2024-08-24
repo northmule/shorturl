@@ -2,9 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/services/url"
+	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/storage/models"
 	"io"
 	"net/http"
 	"regexp"
@@ -14,24 +18,25 @@ var regexURL = regexp.MustCompile(`(http|https)://\S+`)
 
 type ShortenerHandler struct {
 	regexURL *regexp.Regexp
-	service  ShortURLServiceInterface
+	service  *url.ShortURLService
+	finder   Finder
 }
 
 type ShortenerHandlerInterface interface {
 	ShortenerHandler(res http.ResponseWriter, req *http.Request)
 }
 
-type ShortURLServiceInterface interface {
-	DecodeURL(url string) (*url.ShortURLData, error)
-	EncodeShortURL(string) (*url.ShortURLData, error)
-}
-
-func NewShortenerHandler(urlService ShortURLServiceInterface) ShortenerHandler {
+func NewShortenerHandler(urlService *url.ShortURLService, storage url.StorageInterface) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{
 		regexURL: regexURL,
 		service:  urlService,
+		finder:   storage,
 	}
 	return *shortenerHandler
+}
+
+type Finder interface {
+	FindByURL(url string) (*models.URL, error)
 }
 
 // ShortenerHandler обработчик создания короткой ссылки
@@ -52,14 +57,19 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 
 	res.Header().Set("content-type", "text/plain")
 
-	shortURLData, err := s.service.DecodeURL(string(bodyValue))
+	var (
+		headerStatus int
+		shortURL     string
+	)
+
+	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(string(bodyValue))
 	if err != nil {
-		http.Error(res, "error decode url", http.StatusBadRequest)
+		http.Error(res, "error find model", headerStatus)
 		return
 	}
 
-	res.WriteHeader(http.StatusCreated)
-	shortURL := fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURLData.ShortURL)
+	res.WriteHeader(headerStatus)
+	shortURL = fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURL)
 	_, err = res.Write([]byte(shortURL))
 	if err != nil {
 		http.Error(res, "error write data", http.StatusBadRequest)
@@ -99,16 +109,89 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 
 	res.Header().Set("content-type", "application/json")
 
-	shortURLData, err := s.service.DecodeURL(shortenerRequest.URL)
+	var (
+		responseJSON JSONResponse
+		headerStatus int
+		shortURL     string
+	)
+
+	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(shortenerRequest.URL)
 	if err != nil {
-		http.Error(res, "error decode url", http.StatusBadRequest)
+		http.Error(res, "error find model", headerStatus)
 		return
 	}
 
-	responseJSON := JSONResponse{
-		Result: fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURLData.ShortURL),
+	responseJSON = JSONResponse{
+		Result: fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, shortURL),
 	}
 	responseString, err := json.Marshal(responseJSON)
+	if err != nil {
+		http.Error(res, "error json marshal response", http.StatusInternalServerError)
+		return
+	}
+
+	res.WriteHeader(headerStatus)
+
+	_, err = res.Write(responseString)
+	if err != nil {
+		http.Error(res, "error write data", http.StatusBadRequest)
+		return
+	}
+}
+
+type BatchRequest struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
+}
+
+type BatchResponse struct {
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
+}
+
+// ShortenerBatch обработка списка адресов
+func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Request) {
+
+	bodyValue, err := io.ReadAll(req.Body)
+	if err != nil {
+		http.Error(res, "error read bodyValue", http.StatusBadRequest)
+		return
+	}
+
+	defer req.Body.Close()
+
+	var requestItems []BatchRequest
+	if err = json.Unmarshal(bodyValue, &requestItems); err != nil {
+		http.Error(res, "error unmarshal json request", http.StatusBadRequest)
+		return
+	}
+	urls := make([]string, 0)
+	for _, requestItem := range requestItems {
+		if !s.regexURL.MatchString(requestItem.OriginalURL) {
+			continue
+		}
+		urls = append(urls, requestItem.OriginalURL)
+	}
+	modelURLs, err := s.service.DecodeURLs(urls)
+	if err != nil {
+		http.Error(res, "error decode urls", http.StatusBadRequest)
+		return
+	}
+	res.Header().Set("content-type", "application/json")
+
+	responseItems := make([]BatchResponse, 0, len(requestItems))
+	for _, requestItem := range requestItems {
+		for _, modelURL := range modelURLs {
+			if requestItem.OriginalURL == modelURL.URL {
+				responseItems = append(responseItems, BatchResponse{
+					CorrelationID: requestItem.CorrelationID,
+					ShortURL:      fmt.Sprintf("%s/%s", config.AppConfig.BaseShortURL, modelURL.ShortURL),
+				})
+			}
+		}
+	}
+
+	responseString, err := json.Marshal(responseItems)
 	if err != nil {
 		http.Error(res, "error json marshal response", http.StatusInternalServerError)
 		return
@@ -121,4 +204,33 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 		http.Error(res, "error write data", http.StatusBadRequest)
 		return
 	}
+}
+func (s *ShortenerHandler) fillShortURLAndResponseStatus(url string) (string, int, error) {
+	var (
+		headerStatus int
+		shortURL     string
+		isURLExists  bool
+	)
+	shortURLData, err := s.service.DecodeURL(url)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == storage.CodeErrorDuplicateKey {
+			isURLExists = true
+		} else {
+			return "", http.StatusInternalServerError, err
+		}
+	}
+	if isURLExists {
+		modelURL, err := s.finder.FindByURL(url)
+		if err != nil {
+			return "", http.StatusInternalServerError, err
+		}
+		headerStatus = http.StatusConflict
+		shortURL = modelURL.ShortURL
+	} else {
+		headerStatus = http.StatusCreated
+		shortURL = shortURLData.ShortURL
+	}
+
+	return shortURL, headerStatus, nil
 }

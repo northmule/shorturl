@@ -38,6 +38,17 @@ func (s *MemoryStorage) Add(url models.URL) error {
 	return nil
 }
 
+func (s *MemoryStorage) MultiAdd(urls []models.URL) error {
+	for _, url := range urls {
+		s.removeItemByURL(url.URL)
+		err := s.Add(url)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // FindByShortURL поиск по короткой ссылке
 func (s *MemoryStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	s.mx.RLock()
@@ -62,6 +73,18 @@ func (s *MemoryStorage) FindByURL(url string) (*models.URL, error) {
 	return nil, fmt.Errorf("the url link was not found")
 }
 
+func (s *MemoryStorage) removeItemByURL(url string) {
+	for shortURL, modelURL := range *s.db {
+		if modelURL.URL == url {
+			delete(*s.db, shortURL)
+		}
+	}
+}
+
 func (s *MemoryStorage) GetAll() (*map[string]models.URL, error) {
 	return s.db, nil
+}
+
+func (s *MemoryStorage) Ping() error {
+	return nil
 }
