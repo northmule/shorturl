@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/northmule/shorturl/config"
+	"github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/auntificator"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"github.com/northmule/shorturl/internal/app/workers"
@@ -42,7 +42,7 @@ type FinderURLs interface {
 // View коротки ссылки пользователя
 func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	userUUID := u.getUserUUID(res, req)
-	logger.LogSugar.Infof("Получен запрос на просмотр URL для пользователя в uuid: %s", userUUID)
+	logger.LogSugar.Infof("Получен запрос на просмотр URL для пользователя с uuid: %s", userUUID)
 	userURLs, err := u.finder.FindUrlsByUserID(userUUID)
 	if err != nil {
 		http.Error(res, "Ошибка получения ссылок пользователя", http.StatusInternalServerError)
@@ -52,6 +52,7 @@ func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "application/json")
 
 	if len(*userURLs) == 0 {
+		logger.LogSugar.Infof("Не нашёл сокращённых ссылок для пользователя с uuid: %s", userUUID)
 		res.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -130,20 +131,24 @@ func (u *UserURLsHandler) deleteShortLinks(shortURLs []string) {
 }
 
 func (u *UserURLsHandler) getUserUUID(res http.ResponseWriter, req *http.Request) string {
-	token := auntificator.GetUserToken(req)
-	if token == "" {
-		res.WriteHeader(http.StatusUnauthorized)
-		logger.LogSugar.Infof("Ожидалось значение cookie %s", auntificator.CookieAuthName)
-		return defaultUUID
+	//token := auntificator.GetUserToken(req)
+	//if token == "" {
+	//	res.WriteHeader(http.StatusUnauthorized)
+	//	logger.LogSugar.Infof("Ожидалось значение cookie %s", auntificator.CookieAuthName)
+	//	return defaultUUID
+	//}
+	//userUUID := defaultUUID
+	//
+	//for k, v := range u.session.GetAll() {
+	//	if k == token {
+	//		userUUID = v
+	//		break
+	//	}
+	//}
+	userIDAny := req.Context().Value(context.KeyContext)
+	var userUUID string
+	if id, ok := userIDAny.(string); ok {
+		userUUID = id
 	}
-	userUUID := defaultUUID
-
-	for k, v := range u.session.GetAll() {
-		if k == token {
-			userUUID = v
-			break
-		}
-	}
-
 	return userUUID
 }
