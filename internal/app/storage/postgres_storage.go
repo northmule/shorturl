@@ -79,7 +79,7 @@ func (p *PostgresStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	defer cancel()
 	rows, err := p.DB.QueryContext(
 		ctx,
-		"select id, short_url, url from url_list where short_url = $1 and deleted_at is null limit 1",
+		"select id, short_url, url, deleted_at from url_list where short_url = $1 limit 1",
 		shortURL,
 	)
 	if err != nil {
@@ -92,14 +92,17 @@ func (p *PostgresStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 		return nil, err
 	}
 	url := models.URL{}
+	var deletedAt sql.NullTime
 	if rows.Next() {
-		err := rows.Scan(&url.ID, &url.ShortURL, &url.URL)
+		err := rows.Scan(&url.ID, &url.ShortURL, &url.URL, &deletedAt)
 		if err != nil {
 			logger.LogSugar.Errorf("При обработке значений в FindByShortURL(%s) произошла ошибка %s", shortURL, err)
 			return nil, err
 		}
 	}
-
+	if deletedAt.Valid {
+		url.DeletedAt = deletedAt.Time
+	}
 	return &url, nil
 }
 
@@ -232,6 +235,20 @@ func (p *PostgresStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, erro
 	}
 
 	return &urls, nil
+}
+
+func (p *PostgresStorage) SoftDeletedShortURL(shortURL string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	rows, err := p.DB.QueryContext(
+		ctx,
+		`update url_list set deleted_at=now() where short_url=$1`,
+		shortURL,
+	)
+	if rows.Err() != nil {
+		logger.LogSugar.Infof("Ошибка удаления SoftDeletedShortURL(%s) - %s", shortURL, err)
+	}
+	return err
 }
 
 // createTable создаёт необходимую таблицу при её отсутсвии

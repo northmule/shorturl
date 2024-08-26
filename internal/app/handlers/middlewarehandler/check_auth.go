@@ -2,7 +2,6 @@ package middlewarehandler
 
 import (
 	"context"
-	"github.com/google/uuid"
 	AppContext "github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/auntificator"
@@ -13,6 +12,8 @@ import (
 	"net/http"
 	"time"
 )
+
+const defaultUUID = "a4a45d8d-cd8b-47a7-a7a1-4bafcf3d1111"
 
 type CheckAuth struct {
 	storage url.StorageInterface
@@ -29,7 +30,7 @@ func NewCheckAuth(storage url.StorageInterface, session *storage.SessionStorage)
 // AuthEveryone выдаст куку с id 1
 func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		if req.URL.Path == "/api/user/urls" {
+		if req.Method == http.MethodGet && req.URL.Path == "/api/user/urls" {
 			next.ServeHTTP(res, req)
 			return
 		}
@@ -37,11 +38,11 @@ func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 		var token string
 		var userUUID string
 		var tokenExp time.Time
-		if sessionUserUUID, ok := c.session.Values[authorizationToken]; ok {
+		if sessionUserUUID, ok := c.session.Get(authorizationToken); ok {
 			userUUID = sessionUserUUID
 			tokenExp = time.Now().Add(auntificator.HMACTokenExp)
 		} else {
-			userUUID = uuid.NewString()
+			userUUID = defaultUUID
 			token, tokenExp = auntificator.GenerateToken(userUUID, auntificator.HMACTokenExp, auntificator.HMACSecretKey)
 			_, err := c.storage.CreateUser(models.User{
 				Name:     "test_user",
@@ -53,7 +54,7 @@ func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 				logger.LogSugar.Errorf("Failed to create user: %v", err)
 				return
 			}
-			c.session.Values[token] = userUUID
+			c.session.Add(token, userUUID)
 		}
 
 		http.SetCookie(res, &http.Cookie{

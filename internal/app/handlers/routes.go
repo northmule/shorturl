@@ -5,6 +5,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/handlers/middlewarehandler"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/workers"
 	"net/http"
 )
 
@@ -26,7 +27,9 @@ func AppRoutes(shortURLService *url.ShortURLService) chi.Router {
 	shortenerHandler := NewShortenerHandler(shortURLService, shortURLService.Storage)
 	redirectHandler := NewRedirectHandler(shortURLService)
 	pingHandler := NewPingHandler(shortURLService.Storage)
-	userUrlsHandler := NewUserUrlsHandler(shortURLService.Storage, sessionStorage)
+
+	worker := workers.NewWorker(shortURLService.Storage)
+	userUrlsHandler := NewUserUrlsHandler(shortURLService.Storage, sessionStorage, worker)
 
 	r.Post("/", shortenerHandler.ShortenerHandler)
 	r.Get("/{id}", redirectHandler.RedirectHandler)
@@ -35,6 +38,7 @@ func AppRoutes(shortURLService *url.ShortURLService) chi.Router {
 	r.Post("/api/shorten/batch", shortenerHandler.ShortenerBatch)
 
 	r.Get("/api/user/urls", userUrlsHandler.View)
+	r.Delete("/api/user/urls", userUrlsHandler.Delete)
 
 	return r
 }

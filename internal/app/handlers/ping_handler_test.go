@@ -46,6 +46,10 @@ func (m *MockPostgresStorageOk) FindUrlsByUserID(userUUID string) (*[]models.URL
 	return nil, nil
 }
 
+func (m *MockPostgresStorageOk) SoftDeletedShortURL(shortURL string) error {
+	return nil
+}
+
 type MockPostgresStorageBad struct {
 	mock.Mock
 }
@@ -76,6 +80,10 @@ func (m *MockPostgresStorageBad) LikeURLToUser(urlID int64, userUUID string) err
 
 func (m *MockPostgresStorageBad) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	return nil, nil
+}
+
+func (m *MockPostgresStorageBad) SoftDeletedShortURL(shortURL string) error {
+	return nil
 }
 
 func TestPingHandler_CheckStorageConnect(t *testing.T) {

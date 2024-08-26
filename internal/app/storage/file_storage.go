@@ -63,6 +63,9 @@ func (f *FileStorage) MultiAdd(urls []models.URL) error {
 	}
 	return nil
 }
+func (f *FileStorage) SoftDeletedShortURL(shortURL string) error {
+	return nil
+}
 
 // FindByShortURL поиск по короткой ссылке
 func (f *FileStorage) FindByShortURL(shortURL string) (*models.URL, error) {
