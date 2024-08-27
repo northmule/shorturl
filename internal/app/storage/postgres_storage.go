@@ -24,7 +24,8 @@ type DBQuery interface {
 }
 
 type PostgresStorage struct {
-	DB DBQuery
+	DB                   DBQuery
+	requestSoftDeleteURL *sql.Stmt
 }
 
 // NewPostgresStorage PostgresStorage настройка подключения к БД
@@ -38,7 +39,18 @@ func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
 		DB: db,
 	}
 
-	return instance, instance.createTable()
+	err = instance.createTable()
+	if err != nil {
+		logger.LogSugar.Error(err.Error())
+	}
+
+	instance.requestSoftDeleteURL, err = db.Prepare(`update url_list set deleted_at=now() where short_url in($1)
+				and id in (
+					select uu.url_id from user_short_url as uu where uu.user_id =
+					                                    (select us.id from users as us where us.uuid=$2 limit 1)
+	)`)
+
+	return instance, err
 }
 
 // Add добавление нового значения
@@ -242,19 +254,7 @@ func (p *PostgresStorage) SoftDeletedShortURL(userUUID string, shortURL ...strin
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
 	shortURLsIn := strings.Join(shortURL, ",")
-	rows, err := p.DB.QueryContext(
-		ctx,
-		`update url_list set deleted_at=now() where short_url in($1)
-				and id in (
-					select uu.url_id from user_short_url as uu where uu.user_id =
-					                                    (select us.id from users as us where us.uuid=$2 limit 1)
-	)`,
-		shortURLsIn,
-		userUUID,
-	)
-	if rows.Err() != nil {
-		logger.LogSugar.Infof("Ошибка удаления SoftDeletedShortURL(%s) - %s", shortURL, err)
-	}
+	_, err := p.requestSoftDeleteURL.ExecContext(ctx, shortURLsIn, userUUID)
 	return err
 }
 

@@ -13,8 +13,6 @@ import (
 	"net/http"
 )
 
-const defaultUUID = "a4a45d8d-cd8b-47a7-a7a1-4bafcf3d1111"
-
 type UserURLsHandler struct {
 	finder  FinderURLs
 	session *storage.SessionStorage
@@ -96,50 +94,12 @@ func (u *UserURLsHandler) Delete(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//userURLs, err := u.finder.FindUrlsByUserID(userUUID)
-	//if err != nil {
-	//	http.Error(res, "Ошибка получения ссылок пользователя", http.StatusInternalServerError)
-	//	logger.LogSugar.Error(err)
-	//	return
-	//}
-	//if len(*userURLs) == 0 {
-	//	http.Error(res, "Пользователь ещё не создал ни одной ссылки", http.StatusNoContent)
-	//	logger.LogSugar.Infof("При запросе FindUrlsByUserID(%s) не найдено URLs", userUUID)
-	//	return
-	//}
-	//
-	//shortURLs := make([]string, 0)
-	//for _, userURL := range *userURLs {
-	//	for _, requestShortURL := range requestShortURLs {
-	//		if userURL.ShortURL == requestShortURL {
-	//			shortURLs = append(shortURLs, requestShortURL)
-	//			break
-	//		}
-	//	}
-	//}
-	//if len(shortURLs) > 0 {
-	//	u.worker.Del(userUUID, shortURLs)
-	//}
 	u.worker.Del(userUUID, requestShortURLs)
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(http.StatusAccepted)
 }
 
 func (u *UserURLsHandler) getUserUUID(res http.ResponseWriter, req *http.Request) string {
-	//token := auntificator.GetUserToken(req)
-	//if token == "" {
-	//	res.WriteHeader(http.StatusUnauthorized)
-	//	logger.LogSugar.Infof("Ожидалось значение cookie %s", auntificator.CookieAuthName)
-	//	return defaultUUID
-	//}
-	//userUUID := defaultUUID
-	//
-	//for k, v := range u.session.GetAll() {
-	//	if k == token {
-	//		userUUID = v
-	//		break
-	//	}
-	//}
 	userIDAny := req.Context().Value(context.KeyContext)
 	var userUUID string
 	if id, ok := userIDAny.(string); ok {
