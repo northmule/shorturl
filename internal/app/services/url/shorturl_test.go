@@ -59,7 +59,7 @@ func (s *storageMock) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	return nil, nil
 }
 
-func (s *storageMock) SoftDeletedShortURL(shortURL string) error {
+func (s *storageMock) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	return nil
 }
 

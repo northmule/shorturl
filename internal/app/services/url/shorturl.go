@@ -34,7 +34,7 @@ type StorageInterface interface {
 	Ping() error
 	MultiAdd(urls []models.URL) error
 	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
-	SoftDeletedShortURL(shortURL string) error
+	SoftDeletedShortURL(userUUID string, shortURL ...string) error
 }
 
 func NewShortURLService(storage StorageInterface) *ShortURLService {

@@ -63,7 +63,7 @@ func (f *FileStorage) MultiAdd(urls []models.URL) error {
 	}
 	return nil
 }
-func (f *FileStorage) SoftDeletedShortURL(shortURL string) error {
+func (f *FileStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	return nil
 }
 

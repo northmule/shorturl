@@ -80,7 +80,7 @@ type RequestDelete []string
 
 func (u *UserURLsHandler) Delete(res http.ResponseWriter, req *http.Request) {
 	userUUID := u.getUserUUID(res, req)
-	logger.LogSugar.Infof("Получен запрос на удаление для пользователя в uuid: %s", userUUID)
+	logger.LogSugar.Infof("Получен запрос на удаление для пользователя с uuid: %s", userUUID)
 
 	bodyValue, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -96,38 +96,33 @@ func (u *UserURLsHandler) Delete(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	userURLs, err := u.finder.FindUrlsByUserID(userUUID)
-	if err != nil {
-		http.Error(res, "Ошибка получения ссылок пользователя", http.StatusInternalServerError)
-		logger.LogSugar.Error(err)
-		return
-	}
-	if len(*userURLs) == 0 {
-		http.Error(res, "Пользователь ещё не создал ни одной ссылки", http.StatusNoContent)
-		logger.LogSugar.Infof("При запросе FindUrlsByUserID(%s) не найдено URLs", userUUID)
-		return
-	}
-
-	shortURLs := make([]string, 0)
-	for _, userURL := range *userURLs {
-		for _, requestShortURL := range requestShortURLs {
-			if userURL.ShortURL == requestShortURL {
-				shortURLs = append(shortURLs, requestShortURL)
-				break
-			}
-		}
-	}
-	if len(shortURLs) > 0 {
-		u.deleteShortLinks(shortURLs)
-	}
-
+	//userURLs, err := u.finder.FindUrlsByUserID(userUUID)
+	//if err != nil {
+	//	http.Error(res, "Ошибка получения ссылок пользователя", http.StatusInternalServerError)
+	//	logger.LogSugar.Error(err)
+	//	return
+	//}
+	//if len(*userURLs) == 0 {
+	//	http.Error(res, "Пользователь ещё не создал ни одной ссылки", http.StatusNoContent)
+	//	logger.LogSugar.Infof("При запросе FindUrlsByUserID(%s) не найдено URLs", userUUID)
+	//	return
+	//}
+	//
+	//shortURLs := make([]string, 0)
+	//for _, userURL := range *userURLs {
+	//	for _, requestShortURL := range requestShortURLs {
+	//		if userURL.ShortURL == requestShortURL {
+	//			shortURLs = append(shortURLs, requestShortURL)
+	//			break
+	//		}
+	//	}
+	//}
+	//if len(shortURLs) > 0 {
+	//	u.worker.Del(userUUID, shortURLs)
+	//}
+	u.worker.Del(userUUID, requestShortURLs)
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(http.StatusAccepted)
-}
-
-func (u *UserURLsHandler) deleteShortLinks(shortURLs []string) {
-
-	u.worker.Del(shortURLs)
 }
 
 func (u *UserURLsHandler) getUserUUID(res http.ResponseWriter, req *http.Request) string {

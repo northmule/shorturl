@@ -46,7 +46,7 @@ func (m *MockPostgresStorageOk) FindUrlsByUserID(userUUID string) (*[]models.URL
 	return nil, nil
 }
 
-func (m *MockPostgresStorageOk) SoftDeletedShortURL(shortURL string) error {
+func (m *MockPostgresStorageOk) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	return nil
 }
 
@@ -82,7 +82,7 @@ func (m *MockPostgresStorageBad) FindUrlsByUserID(userUUID string) (*[]models.UR
 	return nil, nil
 }
 
-func (m *MockPostgresStorageBad) SoftDeletedShortURL(shortURL string) error {
+func (m *MockPostgresStorageBad) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	return nil
 }
 

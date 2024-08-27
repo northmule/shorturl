@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-const workerNum = 20
+const workerNum = 30
 
 type Worker struct {
 	deleter Deleter
@@ -21,10 +21,10 @@ func NewWorker(deleter Deleter) *Worker {
 }
 
 type Deleter interface {
-	SoftDeletedShortURL(shortURL string) error
+	SoftDeletedShortURL(userUUID string, shortURL ...string) error
 }
 
-func (w *Worker) Del(input []string) {
+func (w *Worker) Del(userUUID string, input []string) {
 
 	// сигнальный канал для завершения горутин
 	doneCh := make(chan struct{})
@@ -35,7 +35,7 @@ func (w *Worker) Del(input []string) {
 	inputCh := w.fillInputChan(doneCh, input)
 
 	// получаем слайс каналов из 10 рабочих add
-	channels := w.fanOut(doneCh, inputCh)
+	channels := w.fanOut(doneCh, inputCh, userUUID)
 
 	// а теперь объединяем десять каналов в один
 	resultCh := w.fanIn(doneCh, channels...)
@@ -64,14 +64,14 @@ func (w *Worker) fillInputChan(doneCh chan struct{}, input []string) chan string
 	return inputCh
 }
 
-func (w *Worker) deleteShortURL(doneCh chan struct{}, inputCh chan string) chan string {
+func (w *Worker) deleteShortURL(doneCh chan struct{}, inputCh chan string, userUUID string) chan string {
 	addRes := make(chan string)
 
 	go func() {
 		defer close(addRes)
 
 		for data := range inputCh {
-			err := w.deleter.SoftDeletedShortURL(data)
+			err := w.deleter.SoftDeletedShortURL(userUUID, data)
 			if err != nil {
 				logger.LogSugar.Infof(err.Error())
 				continue
@@ -88,13 +88,13 @@ func (w *Worker) deleteShortURL(doneCh chan struct{}, inputCh chan string) chan 
 }
 
 // fanOut принимает канал данных
-func (w *Worker) fanOut(doneCh chan struct{}, inputCh chan string) []chan string {
+func (w *Worker) fanOut(doneCh chan struct{}, inputCh chan string, userUUID string) []chan string {
 	// каналы, в которые отправляются результаты
 	channels := make([]chan string, workerNum)
 
 	for i := 0; i < workerNum; i++ {
-		// получаем канал из горутины add
-		addResultCh := w.deleteShortURL(doneCh, inputCh)
+		// получаем канал из горутины
+		addResultCh := w.deleteShortURL(doneCh, inputCh, userUUID)
 		// отправляем его в слайс каналов
 		channels[i] = addResultCh
 	}

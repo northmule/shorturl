@@ -42,7 +42,7 @@ func (s *MemoryStorage) CreateUser(user models.User) (int64, error) {
 	return 0, nil
 }
 
-func (s *MemoryStorage) SoftDeletedShortURL(shortURL string) error {
+func (s *MemoryStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	return nil
 }
 
