@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-const workerNum = 30
+const workerNum = 1
 
 type Worker struct {
 	deleter Deleter
