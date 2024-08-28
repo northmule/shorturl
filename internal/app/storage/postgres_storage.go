@@ -26,6 +26,7 @@ type DBQuery interface {
 type PostgresStorage struct {
 	DB                   DBQuery
 	requestSoftDeleteURL *sql.Stmt
+	requestCreateUser    *sql.Stmt
 }
 
 // NewPostgresStorage PostgresStorage настройка подключения к БД
@@ -49,6 +50,10 @@ func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
 					select uu.url_id from user_short_url as uu where uu.user_id =
 					                                    (select us.id from users as us where us.uuid=$2 limit 1)
 	)`)
+	if err != nil {
+		logger.LogSugar.Error(err.Error())
+	}
+	instance.requestCreateUser, err = db.Prepare(`insert into users (name, login, password, uuid) values ($1, $2, $3, $4) returning id`)
 
 	return instance, err
 }
@@ -65,18 +70,19 @@ func (p *PostgresStorage) Add(url models.URL) (int64, error) {
 
 // CreateUser добавление нового значения
 func (p *PostgresStorage) CreateUser(user models.User) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
-	defer cancel()
-	var insertID int64
-	_ = p.DB.QueryRowContext(
-		ctx,
-		"insert into users (name, login, password, uuid) values ($1, $2, $3, $4) returning id",
-		user.Name,
-		user.Login,
-		user.Password,
-		user.UUID,
-	).Scan(&insertID)
-	return insertID, nil
+	//ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	//defer cancel()
+	//var insertID int64
+	//_ = p.DB.QueryRowContext(
+	//	ctx,
+	//	"insert into users (name, login, password, uuid) values ($1, $2, $3, $4) returning id",
+	//	user.Name,
+	//	user.Login,
+	//	user.Password,
+	//	user.UUID,
+	//).Scan(&insertID)
+	p.requestCreateUser.Exec(user.Name, user.Login, user.Password, user.UUID)
+	return 0, nil
 }
 
 func (p *PostgresStorage) LikeURLToUser(urlID int64, userUUID string) error {

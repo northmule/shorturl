@@ -4,15 +4,22 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 )
 
-const workerNum = 50
+const workerNum = 3
 
 type Worker struct {
 	deleter Deleter
+	jobChan chan job
 }
 
 func NewWorker(deleter Deleter) *Worker {
 	instance := Worker{
 		deleter: deleter,
+	}
+
+	instance.jobChan = make(chan job, 5)
+
+	for i := 0; i < workerNum; i++ {
+		go instance.worker(instance.jobChan)
 	}
 
 	return &instance
@@ -28,13 +35,13 @@ type job struct {
 }
 
 func (w *Worker) Del(userUUID string, input []string) {
-	jobCh := make(chan job, len(input))
+	//jobCh := make(chan job, len(input))
+	//
+	//for i := 0; i < workerNum; i++ {
+	//	go w.worker(jobCh)
+	//}
 
-	for i := 0; i < workerNum; i++ {
-		go w.worker(jobCh)
-	}
-
-	go w.producer(userUUID, input, jobCh)
+	go w.producer(userUUID, input, w.jobChan)
 }
 
 func (w *Worker) producer(uuid string, urls []string, jobCh chan<- job) {

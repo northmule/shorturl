@@ -10,7 +10,6 @@ import (
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"github.com/northmule/shorturl/internal/app/util/user"
 	"net/http"
 	"strings"
 	"time"
@@ -96,7 +95,7 @@ func (c *CheckAuth) createUser(userUUID string) {
 		Name:     "test_user",
 		UUID:     userUUID,
 		Login:    "test_user" + userUUID,
-		Password: user.PasswordHash(userUUID),
+		Password: "password",
 	})
 	if err != nil {
 		logger.LogSugar.Errorf("Failed to create user: %v", err)
