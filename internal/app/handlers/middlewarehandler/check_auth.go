@@ -34,8 +34,6 @@ func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		var isUserUrls bool
 		if req.Method == http.MethodGet && req.URL.Path == "/api/user/urls" {
-			//next.ServeHTTP(res, req)
-			//return
 			isUserUrls = true
 		}
 		authorizationToken := auntificator.GetUserToken(req)

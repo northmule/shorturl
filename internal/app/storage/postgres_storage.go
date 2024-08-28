@@ -75,19 +75,10 @@ func (p *PostgresStorage) Add(url models.URL) (int64, error) {
 
 // CreateUser добавление нового значения
 func (p *PostgresStorage) CreateUser(user models.User) (int64, error) {
-	//ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
-	//defer cancel()
-	//var insertID int64
-	//_ = p.DB.QueryRowContext(
-	//	ctx,
-	//	"insert into users (name, login, password, uuid) values ($1, $2, $3, $4) returning id",
-	//	user.Name,
-	//	user.Login,
-	//	user.Password,
-	//	user.UUID,
-	//).Scan(&insertID)
-	p.requestCreateUser.Exec(user.Name, user.Login, user.Password, user.UUID)
-	return 0, nil
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	_, err := p.requestCreateUser.ExecContext(ctx, user.Name, user.Login, user.Password, user.UUID)
+	return 0, err
 }
 
 func (p *PostgresStorage) LikeURLToUser(urlID int64, userUUID string) error {
