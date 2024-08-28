@@ -69,7 +69,7 @@ func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 				res = c.authorization(res, userUUID, token, tokenExp)
 			}
 
-			//c.createUser(userUUID)
+			c.createUser(userUUID)
 		}
 
 		res.Header().Set("content-type", "text/plain; charset=utf-8")
