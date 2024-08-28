@@ -85,6 +85,7 @@ func (c *CheckAuth) authorization(res http.ResponseWriter, userUUID string, toke
 		Name:    auntificator.CookieAuthName,
 		Value:   tokenValue,
 		Expires: tokenExp,
+		Secure:  false,
 		Path:    "/",
 	})
 	res.Header().Set("Authorization", tokenValue)
