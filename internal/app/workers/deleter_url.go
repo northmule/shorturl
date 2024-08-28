@@ -4,7 +4,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 )
 
-const workerNum = 3
+const workerNum = 10
 
 type Worker struct {
 	deleter Deleter
