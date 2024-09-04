@@ -8,10 +8,16 @@ type SessionStorage struct {
 	mx     sync.RWMutex
 }
 
-func NewSessionStorage() *SessionStorage {
+func NewSessionStorage() Session {
 	return &SessionStorage{
 		Values: make(map[string]string, 100),
 	}
+}
+
+type Session interface {
+	Add(key string, value string)
+	Get(key string) (string, bool)
+	GetAll() map[string]string
 }
 
 func (s *SessionStorage) Add(key string, value string) {

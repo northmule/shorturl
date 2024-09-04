@@ -15,11 +15,11 @@ import (
 
 type UserURLsHandler struct {
 	finder  FinderURLs
-	session *storage.SessionStorage
+	session *storage.Session
 	worker  *workers.Worker
 }
 
-func NewUserUrlsHandler(finder FinderURLs, sessionStorage *storage.SessionStorage, worker *workers.Worker) *UserURLsHandler {
+func NewUserUrlsHandler(finder FinderURLs, sessionStorage *storage.Session, worker *workers.Worker) *UserURLsHandler {
 	instance := UserURLsHandler{
 		finder:  finder,
 		session: sessionStorage,

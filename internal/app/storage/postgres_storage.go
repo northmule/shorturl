@@ -9,7 +9,6 @@ import (
 	"github.com/northmule/shorturl/internal/app/storage/migrations"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	_ "go.uber.org/mock/mockgen/model"
-	"strings"
 	"time"
 )
 
@@ -46,7 +45,7 @@ func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
 		logger.LogSugar.Error(err.Error())
 	}
 
-	instance.requestSoftDeleteURL, err = db.Prepare(`update url_list set deleted_at=now() where short_url in($1)
+	instance.requestSoftDeleteURL, err = db.Prepare(`update url_list set deleted_at=now() where short_url = ANY($1)
 				and id in (
 					select uu.url_id from user_short_url as uu where uu.user_id =
 					                                    (select us.id from users as us where us.uuid=$2 limit 1)
@@ -258,8 +257,7 @@ func (p *PostgresStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, erro
 func (p *PostgresStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
-	shortURLsIn := strings.Join(shortURL, ",")
-	_, err := p.requestSoftDeleteURL.ExecContext(ctx, shortURLsIn, userUUID)
+	_, err := p.requestSoftDeleteURL.ExecContext(ctx, shortURL, userUUID)
 	return err
 }
 
@@ -267,11 +265,19 @@ func (p *PostgresStorage) SoftDeletedShortURL(userUUID string, shortURL ...strin
 func (p *PostgresStorage) createTable() error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
+	tx, err := p.DB.Begin()
+	if err != nil {
+		return err
+	}
 
 	logger.LogSugar.Info("Попытка создать таблицу url_list")
-	_, err := p.DB.ExecContext(ctx, migrations.Migrations01)
+	_, err = p.DB.ExecContext(ctx, migrations.Migrations01)
 	if err != nil {
 		logger.LogSugar.Errorf("Ошибка создания таблицы: %s", err)
+		errR := tx.Rollback()
+		if errR != nil {
+			logger.LogSugar.Errorf("откат транзакции вызвал сбой: %s", errR)
+		}
 		return err
 	}
 
@@ -279,6 +285,10 @@ func (p *PostgresStorage) createTable() error {
 	_, err = p.DB.ExecContext(ctx, migrations.Migrations02)
 	if err != nil {
 		logger.LogSugar.Errorf("Ошибка создания таблицы: %s", err)
+		errR := tx.Rollback()
+		if errR != nil {
+			logger.LogSugar.Errorf("откат транзакции вызвал сбой: %s", errR)
+		}
 		return err
 	}
 
@@ -286,9 +296,18 @@ func (p *PostgresStorage) createTable() error {
 	_, err = p.DB.ExecContext(ctx, migrations.Migrations03)
 	if err != nil {
 		logger.LogSugar.Errorf("Ошибка создания таблицы: %s", err)
+		errR := tx.Rollback()
+		if errR != nil {
+			logger.LogSugar.Errorf("откат транзакции вызвал сбой: %s", errR)
+		}
 		return err
 	}
 
+	err = tx.Commit()
+
+	if err != nil {
+		return err
+	}
 	logger.LogSugar.Info("Создание таблиц завершено")
 	return nil
 }

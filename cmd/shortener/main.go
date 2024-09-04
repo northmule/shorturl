@@ -35,7 +35,8 @@ func run() error {
 
 	shortURLService := url.NewShortURLService(storage)
 	logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)
-	return http.ListenAndServe(cfg.ServerURL, handlers.AppRoutes(shortURLService))
+	stop := make(chan struct{})
+	return http.ListenAndServe(cfg.ServerURL, handlers.AppRoutes(shortURLService, stop))
 }
 
 func getStorage(cfg *config.Config) (url.StorageInterface, error) {

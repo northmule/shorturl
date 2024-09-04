@@ -48,7 +48,6 @@ type Setter interface {
 
 // ShortenerHandler обработчик создания короткой ссылки
 func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.Request) {
-
 	bodyValue, err := io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(res, "error read bodyValue", http.StatusBadRequest)

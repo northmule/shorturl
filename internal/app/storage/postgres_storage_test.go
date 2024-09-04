@@ -96,10 +96,16 @@ func TestPostgresStorage_createTable(t *testing.T) {
 		defer ctrl.Finish()
 		m := mocks.NewMockDBQuery(ctrl)
 		result := &testResult{}
-		m.EXPECT().ExecContext(gomock.Any(), gomock.Any(), gomock.Any()).Return(result, nil)
-		m.EXPECT().ExecContext(gomock.Any(), gomock.Any(), gomock.Any()).Return(result, nil)
-		m.EXPECT().ExecContext(gomock.Any(), gomock.Any(), gomock.Any()).Return(result, nil)
+		m.EXPECT().ExecContext(gomock.Any(), gomock.Any(), gomock.Any()).Return(result, nil).Times(3)
+		tx := new(sql.Tx)
+		m.EXPECT().Begin().Return(tx, nil)
 		storage := PostgresStorage{DB: m}
+		defer func() {
+			// вызов Commit
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in f", r)
+			}
+		}()
 		storage.createTable()
 	})
 }

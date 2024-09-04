@@ -19,32 +19,38 @@ const defaultUUID = "a4a45d8d-cd8b-47a7-a7a1-4bafcf3d1111"
 
 type CheckAuth struct {
 	storage url.StorageInterface
-	session *storage.SessionStorage
+	session *storage.Session
 }
 
-func NewCheckAuth(storage url.StorageInterface, session *storage.SessionStorage) *CheckAuth {
+func NewCheckAuth(storage url.StorageInterface, session *storage.Session) *CheckAuth {
 	return &CheckAuth{
 		storage: storage,
 		session: session,
 	}
 }
 
+func (c *CheckAuth) AccessVerificationUserUrls(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		authorizationToken := auntificator.GetUserToken(req)
+
+		if authorizationToken == "" {
+			logger.LogSugar.Infof("UUID пользователя в куке не найден %s при запросе /api/user/urls", authorizationToken)
+			res.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(res, req)
+	})
+}
+
 // AuthEveryone выдаст куку
 func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		var isUserUrls bool
-		if req.Method == http.MethodGet && req.URL.Path == "/api/user/urls" {
-			isUserUrls = true
-		}
 		authorizationToken := auntificator.GetUserToken(req)
 
 		var userUUID string
 		if authorizationToken == "" {
-			if isUserUrls {
-				logger.LogSugar.Infof("UUID пользователя в куке не найден %s при запросе /api/user/urls", authorizationToken)
-				res.WriteHeader(http.StatusUnauthorized)
-				return
-			}
+
 			userUUID = uuid.NewString()
 			token, tokenExp := auntificator.GenerateToken(userUUID, auntificator.HMACTokenExp, auntificator.HMACSecretKey)
 			logger.LogSugar.Infof("Куки не переданы, создаю нового пользователя с uuid %s", userUUID)

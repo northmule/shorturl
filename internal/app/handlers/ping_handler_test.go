@@ -126,7 +126,8 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			shortURLService := url.NewShortURLService(tt.storage)
-			ts := httptest.NewServer(AppRoutes(shortURLService))
+			stop := make(chan struct{})
+			ts := httptest.NewServer(AppRoutes(shortURLService, stop))
 			defer ts.Close()
 
 			request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)
@@ -158,7 +159,8 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 		mockStorage.On("Ping").Return(errors.New("bad test request"))
 
 		shortURLService := url.NewShortURLService(mockStorage)
-		ts := httptest.NewServer(AppRoutes(shortURLService))
+		stop := make(chan struct{})
+		ts := httptest.NewServer(AppRoutes(shortURLService, stop))
 		defer ts.Close()
 
 		request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)
