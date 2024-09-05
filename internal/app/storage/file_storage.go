@@ -15,6 +15,8 @@ type FileStorage struct {
 	file        *os.File
 	scanner     *bufio.Scanner
 	cacheValues []string
+	users       *os.File
+	deletedURLs *os.File
 }
 
 func NewFileStorage(file *os.File) *FileStorage {
@@ -23,6 +25,22 @@ func NewFileStorage(file *os.File) *FileStorage {
 		scanner:     bufio.NewScanner(file),
 		cacheValues: make([]string, 0),
 	}
+
+	usersFileName := file.Name() + "user.json"
+
+	fileUsers, err := os.OpenFile(usersFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		logger.LogSugar.Errorf("Failed to open file %s: error: %s", usersFileName, err)
+		return nil
+	}
+	deletedURLsFileName := file.Name() + "deleted-urls.json"
+	fileDeletedURLs, err := os.OpenFile(deletedURLsFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		logger.LogSugar.Errorf("Failed to open file %s: error: %s", deletedURLsFileName, err)
+		return nil
+	}
+	instance.users = fileUsers
+	instance.deletedURLs = fileDeletedURLs
 	instance.restoreStorage()
 	return instance
 }
@@ -46,6 +64,17 @@ func (f *FileStorage) Add(url models.URL) (int64, error) {
 }
 
 func (f *FileStorage) CreateUser(user models.User) (int64, error) {
+	modelRaw, err := json.Marshal(user)
+	if err != nil {
+		logger.LogSugar.Error(err)
+		return 0, err
+	}
+	modelJSON := string(modelRaw)
+
+	_, err = f.users.WriteString(modelJSON + "\n")
+	if err != nil {
+		logger.LogSugar.Errorf("Ошибка записи строки %s в файл %s", modelJSON, f.users.Name())
+	}
 	return 0, nil
 }
 

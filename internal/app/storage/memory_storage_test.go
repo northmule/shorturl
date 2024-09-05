@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"testing"
 	"time"
@@ -60,5 +61,19 @@ func TestMemoryStorage_concurrentAdd(t *testing.T) {
 	storage.Add(models.URL{ShortURL: "endKey", URL: "https://ya.ru"})
 	if _, ok := (*storage.db)["endKey"]; !ok {
 		t.Errorf("expected 'endKey' to be in the map")
+	}
+}
+func TestMemoryStorage_CreateUser(t *testing.T) {
+	storage := NewMemoryStorage()
+	user := models.User{
+		ID:       1,
+		Name:     "name",
+		Login:    "Login",
+		Password: "Login",
+		UUID:     uuid.NewString(),
+	}
+	id, _ := storage.CreateUser(user)
+	if id != int64(user.ID) {
+		t.Errorf("CreateUser() id = %v, want %v", id, user.ID)
 	}
 }
