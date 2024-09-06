@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/northmule/shorturl/config"
+	"github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
@@ -20,6 +21,7 @@ type ShortenerHandler struct {
 	regexURL *regexp.Regexp
 	service  *url.ShortURLService
 	finder   Finder
+	setter   Setter
 }
 
 type ShortenerHandlerInterface interface {
@@ -31,12 +33,17 @@ func NewShortenerHandler(urlService *url.ShortURLService, storage url.StorageInt
 		regexURL: regexURL,
 		service:  urlService,
 		finder:   storage,
+		setter:   storage,
 	}
 	return *shortenerHandler
 }
 
 type Finder interface {
 	FindByURL(url string) (*models.URL, error)
+}
+
+type Setter interface {
+	LikeURLToUser(urlID int64, userUUID string) error
 }
 
 // ShortenerHandler обработчик создания короткой ссылки
@@ -61,8 +68,12 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 		headerStatus int
 		shortURL     string
 	)
-
-	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(string(bodyValue))
+	userIDAny := req.Context().Value(context.KeyContext)
+	var userUUID string
+	if id, ok := userIDAny.(string); ok {
+		userUUID = id
+	}
+	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(userUUID, string(bodyValue))
 	if err != nil {
 		http.Error(res, "error find model", headerStatus)
 		return
@@ -114,8 +125,12 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 		headerStatus int
 		shortURL     string
 	)
-
-	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(shortenerRequest.URL)
+	userIDAny := req.Context().Value(context.KeyContext)
+	var userUUID string
+	if id, ok := userIDAny.(string); ok {
+		userUUID = id
+	}
+	shortURL, headerStatus, err = s.fillShortURLAndResponseStatus(userUUID, shortenerRequest.URL)
 	if err != nil {
 		http.Error(res, "error find model", headerStatus)
 		return
@@ -205,7 +220,7 @@ func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Req
 		return
 	}
 }
-func (s *ShortenerHandler) fillShortURLAndResponseStatus(url string) (string, int, error) {
+func (s *ShortenerHandler) fillShortURLAndResponseStatus(userUUID string, url string) (string, int, error) {
 	var (
 		headerStatus int
 		shortURL     string
@@ -230,6 +245,10 @@ func (s *ShortenerHandler) fillShortURLAndResponseStatus(url string) (string, in
 	} else {
 		headerStatus = http.StatusCreated
 		shortURL = shortURLData.ShortURL
+		err = s.setter.LikeURLToUser(shortURLData.URLID, userUUID)
+		if err != nil {
+			return "", 0, err
+		}
 	}
 
 	return shortURL, headerStatus, nil

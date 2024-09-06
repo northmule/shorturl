@@ -19,8 +19,8 @@ type MockPostgresStorageOk struct {
 	mock.Mock
 }
 
-func (m *MockPostgresStorageOk) Add(url models.URL) error {
-	return nil
+func (m *MockPostgresStorageOk) Add(url models.URL) (int64, error) {
+	return 0, nil
 }
 func (m *MockPostgresStorageOk) FindByShortURL(shortURL string) (*models.URL, error) {
 	return nil, nil
@@ -34,13 +34,24 @@ func (m *MockPostgresStorageOk) Ping() error {
 func (m *MockPostgresStorageOk) MultiAdd(url []models.URL) error {
 	return nil
 }
+func (m *MockPostgresStorageOk) CreateUser(user models.User) (int64, error) {
+	return 0, nil
+}
+
+func (m *MockPostgresStorageOk) LikeURLToUser(urlID int64, userUUID string) error {
+	return nil
+}
+
+func (m *MockPostgresStorageOk) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
+	return nil, nil
+}
 
 type MockPostgresStorageBad struct {
 	mock.Mock
 }
 
-func (m *MockPostgresStorageBad) Add(url models.URL) error {
-	return nil
+func (m *MockPostgresStorageBad) Add(url models.URL) (int64, error) {
+	return 0, nil
 }
 func (m *MockPostgresStorageBad) FindByShortURL(shortURL string) (*models.URL, error) {
 	return nil, nil
@@ -54,6 +65,17 @@ func (m *MockPostgresStorageBad) Ping() error {
 }
 func (m *MockPostgresStorageBad) MultiAdd(url []models.URL) error {
 	return nil
+}
+func (m *MockPostgresStorageBad) CreateUser(user models.User) (int64, error) {
+	return 0, nil
+}
+
+func (m *MockPostgresStorageBad) LikeURLToUser(urlID int64, userUUID string) error {
+	return nil
+}
+
+func (m *MockPostgresStorageBad) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
+	return nil, nil
 }
 
 func TestPingHandler_CheckStorageConnect(t *testing.T) {

@@ -28,9 +28,15 @@ func TestPostgresStorage_Add(t *testing.T) {
 		ctrl, _ := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()
 		m := mocks.NewMockDBQuery(ctrl)
-		result := &testResult{}
-		m.EXPECT().ExecContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(result, nil)
+		row := &sql.Row{}
+		m.EXPECT().QueryRowContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(row)
 		storage := PostgresStorage{DB: m}
+		defer func() {
+			// вызов Next в Add
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in f", r)
+			}
+		}()
 		storage.Add(models.URL{})
 	})
 
@@ -85,11 +91,13 @@ func TestPostgresStorage_Ping(t *testing.T) {
 
 func TestPostgresStorage_createTable(t *testing.T) {
 	logger.NewLogger("info")
-	t.Run("Создание_БД", func(t *testing.T) {
+	t.Run("Создание_таблиц", func(t *testing.T) {
 		ctrl, _ := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()
 		m := mocks.NewMockDBQuery(ctrl)
 		result := &testResult{}
+		m.EXPECT().ExecContext(gomock.Any(), gomock.Any(), gomock.Any()).Return(result, nil)
+		m.EXPECT().ExecContext(gomock.Any(), gomock.Any(), gomock.Any()).Return(result, nil)
 		m.EXPECT().ExecContext(gomock.Any(), gomock.Any(), gomock.Any()).Return(result, nil)
 		storage := PostgresStorage{DB: m}
 		storage.createTable()

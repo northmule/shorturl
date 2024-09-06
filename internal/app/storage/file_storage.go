@@ -28,11 +28,11 @@ func NewFileStorage(file *os.File) *FileStorage {
 }
 
 // Add добавление нового значения
-func (f *FileStorage) Add(url models.URL) error {
+func (f *FileStorage) Add(url models.URL) (int64, error) {
 	modelRaw, err := json.Marshal(url)
 	if err != nil {
 		logger.LogSugar.Error(err)
-		return err
+		return 0, err
 	}
 	modelJSON := string(modelRaw)
 
@@ -42,12 +42,21 @@ func (f *FileStorage) Add(url models.URL) error {
 		logger.LogSugar.Errorf("Ошибка записи строки %s в файл %s", modelJSON, f.file.Name())
 	}
 
+	return 1, nil
+}
+
+func (f *FileStorage) CreateUser(user models.User) (int64, error) {
+	return 0, nil
+}
+
+func (f *FileStorage) LikeURLToUser(urlID int64, userUUID string) error {
+	//todo
 	return nil
 }
 
 func (f *FileStorage) MultiAdd(urls []models.URL) error {
 	for _, url := range urls {
-		err := f.Add(url)
+		_, err := f.Add(url)
 		if err != nil {
 			return err
 		}
@@ -84,7 +93,15 @@ func (f *FileStorage) FindByURL(url string) (*models.URL, error) {
 			return &url, nil
 		}
 	}
-	return nil, fmt.Errorf("the url link was not found")
+	return new(models.URL), nil
+}
+
+func (f *FileStorage) FindUserByLoginAndPasswordHash(login string, password string) (*models.User, error) {
+	return nil, nil
+}
+
+func (f *FileStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
+	return nil, nil
 }
 
 func (f *FileStorage) Close() error {

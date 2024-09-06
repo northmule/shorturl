@@ -92,7 +92,7 @@ func TestFileStorage_Add(t *testing.T) {
 			ShortURL: "aaa",
 			URL:      "bbbbbbb",
 		}
-		err = fileStorage.Add(url)
+		_, err = fileStorage.Add(url)
 		if err != nil {
 			t.Errorf("Add() error = %v", err)
 		}
@@ -111,7 +111,7 @@ func TestFileStorage_Add(t *testing.T) {
 			ShortURL: "aaa",
 			URL:      "bbbbbbb",
 		}
-		_ = fileStorage.Add(url)
+		_, _ = fileStorage.Add(url)
 		findValue, err := fileStorage.FindByURL(url.URL)
 		if findValue == nil {
 			t.Errorf("FindByURL() error = %v", err)
@@ -137,7 +137,7 @@ func TestFileStorage_Add(t *testing.T) {
 		}
 
 		time.Sleep(time.Millisecond * 100)
-		err = fileStorage.Add(models.URL{ShortURL: "endKey", URL: "https://ya.ru"})
+		_, err = fileStorage.Add(models.URL{ShortURL: "endKey", URL: "https://ya.ru"})
 		if err != nil {
 			t.Errorf("Add() error = %v", err)
 		}
