@@ -15,7 +15,8 @@ import (
 func TestRedirectHandler(t *testing.T) {
 	_ = logger.NewLogger("fatal")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
-	ts := httptest.NewServer(AppRoutes(shortURLService))
+	stop := make(chan struct{})
+	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
 
 	defer ts.Close()
 

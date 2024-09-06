@@ -18,7 +18,8 @@ import (
 // TestShortenerHandler тест обработчика для декодирования ссылки
 func TestShortenerHandler(t *testing.T) {
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
-	ts := httptest.NewServer(AppRoutes(shortURLService))
+	stop := make(chan struct{})
+	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
 	defer ts.Close()
 
 	type want struct {
@@ -99,7 +100,8 @@ func TestShortenerHandler(t *testing.T) {
 
 func TestMethodNotAllowed(t *testing.T) {
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
-	ts := httptest.NewServer(AppRoutes(shortURLService))
+	stop := make(chan struct{})
+	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
 	defer ts.Close()
 
 	request, err := http.NewRequest(http.MethodGet, ts.URL, nil)
@@ -119,7 +121,8 @@ func TestMethodNotAllowed(t *testing.T) {
 
 func TestShortenerJsonHandler(t *testing.T) {
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
-	ts := httptest.NewServer(AppRoutes(shortURLService))
+	stop := make(chan struct{})
+	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
 	defer ts.Close()
 
 	type want struct {
@@ -207,7 +210,8 @@ func TestShortenerJsonHandler(t *testing.T) {
 func TestGzipCompression(t *testing.T) {
 	_ = logger.NewLogger("info")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
-	ts := httptest.NewServer(AppRoutes(shortURLService))
+	stop := make(chan struct{})
+	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
 	defer ts.Close()
 
 	requestBody := `{

@@ -2,7 +2,7 @@ package auntificator
 
 import (
 	"crypto/hmac"
-	"crypto/sha512"
+	"crypto/sha256"
 	"encoding/hex"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"net/http"
@@ -30,11 +30,28 @@ func GetUserToken(req *http.Request) string {
 }
 
 func GenerateToken(userUUID string, exp time.Duration, secretKey string) (string, time.Time) {
-	beforeHashData := make([]byte, 0, idCookieSize)
-	copy(beforeHashData, userUUID)
-	hashed := hmac.New(sha512.New, []byte(secretKey))
-	hashed.Write([]byte("rrr"))
-	token := hex.EncodeToString(hashed.Sum(beforeHashData))
+	hashed := hmac.New(sha256.New, []byte(secretKey))
+	hashed.Write([]byte(userUUID))
+	token := hex.EncodeToString(hashed.Sum(nil))
 	tokenExp := time.Now().Add(exp)
 	return token, tokenExp
+}
+
+func ValidateToken(userUUID string, token string, secretKey string) bool {
+	logger.LogSugar.Infof("Проверка токена %s для пользователя %s", token, userUUID)
+	tokenSign, err := hex.DecodeString(token)
+	if err != nil {
+		logger.LogSugar.Infof("Не удалось раскодировать token %s", token)
+		return false
+	}
+	hashed := hmac.New(sha256.New, []byte(secretKey))
+	hashed.Write([]byte(userUUID))
+	expectedSign := hashed.Sum(nil)
+
+	if !hmac.Equal(tokenSign, expectedSign) {
+		logger.LogSugar.Infof("Токен %s пользователя подписан другим ключом", token)
+		return false
+	}
+	logger.LogSugar.Infof("Токен %s прошёл проверку", token)
+	return true
 }

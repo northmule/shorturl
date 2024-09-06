@@ -10,12 +10,13 @@ import (
 	"time"
 )
 
-const ShortURLDefaultSize = 6
+const ShortURLDefaultSize = 10
 
 type ShortURLData struct {
-	URL      string
-	ShortURL string
-	URLID    int64
+	URL       string
+	ShortURL  string
+	URLID     int64
+	DeletedAt time.Time
 }
 
 type ShortURLService struct {
@@ -33,6 +34,7 @@ type StorageInterface interface {
 	Ping() error
 	MultiAdd(urls []models.URL) error
 	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
+	SoftDeletedShortURL(userUUID string, shortURL ...string) error
 }
 
 func NewShortURLService(storage StorageInterface) *ShortURLService {
@@ -91,12 +93,13 @@ func (s *ShortURLService) EncodeShortURL(shortURL string) (data *ShortURLData, e
 		return nil, errors.New("short url not found")
 	}
 	s.shortURLData.URL = modelURL.URL
+	s.shortURLData.DeletedAt = modelURL.DeletedAt
 	return &s.shortURLData, nil
 }
 
 func newRandomString(size int) string {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz09_-.")
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz09")
 
 	b := make([]rune, size)
 	for i := range b {

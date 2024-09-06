@@ -46,6 +46,10 @@ func (m *MockPostgresStorageOk) FindUrlsByUserID(userUUID string) (*[]models.URL
 	return nil, nil
 }
 
+func (m *MockPostgresStorageOk) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
+	return nil
+}
+
 type MockPostgresStorageBad struct {
 	mock.Mock
 }
@@ -76,6 +80,10 @@ func (m *MockPostgresStorageBad) LikeURLToUser(urlID int64, userUUID string) err
 
 func (m *MockPostgresStorageBad) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	return nil, nil
+}
+
+func (m *MockPostgresStorageBad) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
+	return nil
 }
 
 func TestPingHandler_CheckStorageConnect(t *testing.T) {
@@ -118,7 +126,8 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			shortURLService := url.NewShortURLService(tt.storage)
-			ts := httptest.NewServer(AppRoutes(shortURLService))
+			stop := make(chan struct{})
+			ts := httptest.NewServer(AppRoutes(shortURLService, stop))
 			defer ts.Close()
 
 			request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)
@@ -150,7 +159,8 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 		mockStorage.On("Ping").Return(errors.New("bad test request"))
 
 		shortURLService := url.NewShortURLService(mockStorage)
-		ts := httptest.NewServer(AppRoutes(shortURLService))
+		stop := make(chan struct{})
+		ts := httptest.NewServer(AppRoutes(shortURLService, stop))
 		defer ts.Close()
 
 		request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)

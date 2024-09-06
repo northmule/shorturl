@@ -1,13 +1,13 @@
 package user
 
 import (
-	"crypto/sha512"
+	"crypto/sha256"
 	"fmt"
 )
 
-// PasswordHash хэш пароля согласно общим правилом хранения в бд
+// PasswordHash хэш пароля
 func PasswordHash(password string) string {
-	hashAlg512 := sha512.New()
-	hashAlg512.Write([]byte(password))
-	return fmt.Sprintf("%x", hashAlg512.Sum(nil))
+	hashAlg := sha256.New()
+	hashAlg.Write([]byte(password))
+	return fmt.Sprintf("%x", hashAlg.Sum(nil))
 }

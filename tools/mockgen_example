@@ -1,2 +1,2 @@
 
-mockgen -destination=internal/app/storage/mock/storage_mock.go -package=mocks github.com/northmule/shorturl/internal/app/storage DBQuery
+mockgen -destination=internal/app/storage/mock/storage_mock.go -package=mocks github.com/northmule/shorturl/internal/app/storage DBQuery,DBTx

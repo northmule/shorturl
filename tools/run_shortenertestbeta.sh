@@ -29,3 +29,4 @@ shortenertestbeta -test.v -test.run=^TestIteration13$ -binary-path=$SHORTURL_PRO
 
 ## Спринт 4
 shortenertestbeta -test.v -test.run=^TestIteration14$ -binary-path=$SHORTURL_PROJECT_PATH/cmd/shortener/shortener -database-dsn='postgres://postgres:123@localhost:5456/shorturl?sslmode=disable'
+shortenertestbeta -test.v -test.run=^TestIteration15$ -binary-path=$SHORTURL_PROJECT_PATH/cmd/shortener/shortener -database-dsn='postgres://postgres:123@localhost:5456/shorturl?sslmode=disable'

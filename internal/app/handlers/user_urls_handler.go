@@ -4,22 +4,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/northmule/shorturl/config"
+	"github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/auntificator"
-	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/storage/models"
+	"github.com/northmule/shorturl/internal/app/workers"
+	"io"
 	"net/http"
 )
 
 type UserURLsHandler struct {
-	storage url.StorageInterface
-	session *storage.SessionStorage
+	finder  FinderURLs
+	session *storage.Session
+	worker  *workers.Worker
 }
 
-func NewUserUrlsHandler(storage url.StorageInterface, sessionStorage *storage.SessionStorage) *UserURLsHandler {
+func NewUserUrlsHandler(finder FinderURLs, sessionStorage *storage.Session, worker *workers.Worker) *UserURLsHandler {
 	instance := UserURLsHandler{
-		storage: storage,
+		finder:  finder,
 		session: sessionStorage,
+		worker:  worker,
 	}
 	return &instance
 }
@@ -29,24 +33,15 @@ type ResponseView struct {
 	OriginalURL string `json:"original_url"`
 }
 
+type FinderURLs interface {
+	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
+}
+
 // View коротки ссылки пользователя
 func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
-	token := auntificator.GetUserToken(req)
-	if token == "" {
-		res.WriteHeader(http.StatusUnauthorized)
-		logger.LogSugar.Infof("Ожидалось значение cookie %s", auntificator.CookieAuthName)
-		return
-	}
-	userUUID := "a4a45d8d-cd8b-47a7-a7a1-4bafcf3d83a5"
-
-	for k, v := range u.session.Values {
-		if k == token {
-			userUUID = v
-			break
-		}
-	}
-
-	userURLs, err := u.storage.FindUrlsByUserID(userUUID)
+	userUUID := u.getUserUUID(res, req)
+	logger.LogSugar.Infof("Получен запрос на просмотр URL для пользователя с uuid: %s", userUUID)
+	userURLs, err := u.finder.FindUrlsByUserID(userUUID)
 	if err != nil {
 		http.Error(res, "Ошибка получения ссылок пользователя", http.StatusInternalServerError)
 		logger.LogSugar.Error(err)
@@ -55,6 +50,7 @@ func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "application/json")
 
 	if len(*userURLs) == 0 {
+		logger.LogSugar.Infof("Не нашёл сокращённых ссылок для пользователя с uuid: %s", userUUID)
 		res.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -76,4 +72,38 @@ func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "error write data", http.StatusInternalServerError)
 		return
 	}
+}
+
+type RequestDelete []string
+
+func (u *UserURLsHandler) Delete(res http.ResponseWriter, req *http.Request) {
+	userUUID := u.getUserUUID(res, req)
+	logger.LogSugar.Infof("Получен запрос на удаление для пользователя с uuid: %s", userUUID)
+
+	bodyValue, err := io.ReadAll(req.Body)
+	if err != nil {
+		http.Error(res, "error read bodyValue", http.StatusBadRequest)
+		return
+	}
+
+	defer req.Body.Close()
+
+	var requestShortURLs RequestDelete
+	if err = json.Unmarshal(bodyValue, &requestShortURLs); err != nil {
+		http.Error(res, "error unmarshal json request", http.StatusBadRequest)
+		return
+	}
+
+	u.worker.Del(userUUID, requestShortURLs)
+	res.Header().Set("content-type", "application/json")
+	res.WriteHeader(http.StatusAccepted)
+}
+
+func (u *UserURLsHandler) getUserUUID(res http.ResponseWriter, req *http.Request) string {
+	userIDAny := req.Context().Value(context.KeyContext)
+	var userUUID string
+	if id, ok := userIDAny.(string); ok {
+		userUUID = id
+	}
+	return userUUID
 }

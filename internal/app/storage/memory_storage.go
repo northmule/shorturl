@@ -8,7 +8,9 @@ import (
 
 // MemoryStorage структура хранилища
 type MemoryStorage struct {
-	db *map[string]models.URL
+	db          *map[string]models.URL
+	users       map[int]models.User
+	deletedURLs map[string]string
 	// Синхронизация конккуретного доступа
 	mx sync.RWMutex
 }
@@ -23,7 +25,9 @@ func NewMemoryStorage() *MemoryStorage {
 	}
 
 	instance := MemoryStorage{
-		db: &databaseData,
+		db:          &databaseData,
+		users:       make(map[int]models.User, 100),
+		deletedURLs: make(map[string]string, 100),
 	}
 
 	return &instance
@@ -39,7 +43,16 @@ func (s *MemoryStorage) Add(url models.URL) (int64, error) {
 }
 
 func (s *MemoryStorage) CreateUser(user models.User) (int64, error) {
-	return 0, nil
+	s.users[user.ID] = user
+	return int64(user.ID), nil
+
+}
+
+func (s *MemoryStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
+	for _, shortURL := range shortURL {
+		s.deletedURLs[shortURL] = userUUID
+	}
+	return nil
 }
 
 func (s *MemoryStorage) LikeURLToUser(urlID int64, userUUID string) error {
