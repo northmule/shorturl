@@ -342,7 +342,8 @@ func BenchmarkShortenerHandler(b *testing.B) {
 		}
 		request.Header.Set("Content-Type", "text/plain")
 		b.StartTimer()
-		_, err = client.ClientApp(client.Params{Request: request})
+		res, err := client.ClientApp(client.Params{Request: request})
+		res.Body.Close()
 		if err != nil {
 			b.Error(err)
 		}
@@ -365,7 +366,8 @@ func BenchmarkShortenerJSONHandler(b *testing.B) {
 		}
 		request.Header.Set("Content-Type", "text/plain")
 		b.StartTimer()
-		_, err = client.ClientApp(client.Params{Request: request})
+		res, err := client.ClientApp(client.Params{Request: request})
+		res.Body.Close()
 		if err != nil {
 			b.Error(err)
 		}
@@ -388,7 +390,8 @@ func BenchmarkShortenerBatch(b *testing.B) {
 		}
 		request.Header.Set("Content-Type", "text/plain")
 		b.StartTimer()
-		_, err = client.ClientApp(client.Params{Request: request})
+		res, err := client.ClientApp(client.Params{Request: request})
+		res.Body.Close()
 		if err != nil {
 			b.Error(err)
 		}

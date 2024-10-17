@@ -115,7 +115,7 @@ func BenchmarkRedirectHandler(b *testing.B) {
 			b.Error(err)
 		}
 		b.StartTimer()
-		response, err := ts.Client().Do(request)
+		response, _ := ts.Client().Do(request)
 		response.Body.Close()
 	}
 }

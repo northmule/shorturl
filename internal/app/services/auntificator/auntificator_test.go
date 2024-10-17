@@ -58,7 +58,7 @@ func TestGenerateToken(t *testing.T) {
 		t.Errorf("Generated token %s is not a valid hex string", token)
 	}
 
-	if expTime.Sub(time.Now()) > exp {
+	if time.Until(expTime) > exp {
 		t.Errorf("Token expiration time is not within the expected range")
 	}
 }
