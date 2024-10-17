@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
+	"strings"
 	"testing"
 )
 
@@ -242,5 +243,26 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func BenchmarkNewRandomString(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		newRandomString(ShortURLDefaultSize)
+	}
+}
+
+func BenchmarkDecodeURLs(b *testing.B) {
+	storageMock := storage.NewMemoryStorage()
+	service := &ShortURLService{
+		Storage:      storageMock,
+		shortURLData: ShortURLData{},
+	}
+	testData := strings.Repeat("A ", 100)
+	urls := strings.Split(testData, " ")
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		service.DecodeURLs(urls)
 	}
 }

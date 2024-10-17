@@ -72,12 +72,12 @@ func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) 
 
 // DecodeURLs преобразование массива url
 func (s *ShortURLService) DecodeURLs(urls []string) ([]models.URL, error) {
-	modelURLs := make([]models.URL, 0)
-	for _, url := range urls {
-		modelURLs = append(modelURLs, models.URL{
-			URL:      url,
-			ShortURL: newRandomString(ShortURLDefaultSize),
-		})
+	modelURLs := make([]models.URL, len(urls))
+	modelURL := new(models.URL)
+	for i, url := range urls {
+		modelURL.URL = url
+		modelURL.ShortURL = newRandomString(ShortURLDefaultSize)
+		modelURLs[i] = *modelURL
 	}
 	err := s.Storage.MultiAdd(modelURLs)
 	if err != nil {

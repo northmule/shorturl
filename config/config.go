@@ -17,6 +17,7 @@ const addressAndPortDefault = ":8080"
 const baseAddressDefault = "http://localhost:8080"
 const pathFileStorage = "/tmp/short-url-db.json"
 const DataBaseConnectionTimeOut = 10000
+const pprofEnabledDefault = true
 
 // Config Конфигурация приложения
 type Config struct {
@@ -28,7 +29,8 @@ type Config struct {
 	// Путь для хранения ссылок
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	// Строка подключения к БД
-	DataBaseDsn string `env:"DATABASE_DSN"`
+	DataBaseDsn  string `env:"DATABASE_DSN"`
+	PprofEnabled bool   `env:"PPROF_ENABLED"`
 }
 
 type InitConfig interface {
@@ -81,6 +83,7 @@ func initFlagConfig(appConfig *Config) error {
 	flagFileStoragePath := configFlag.String("f", pathFileStorage, "the path to the file for storing links")
 	// Строка подключения базы данных
 	flagDataBaseDsn := configFlag.String("d", "", "specify the connection string to the database")
+	pprofEnabled := configFlag.Bool("pprof", pprofEnabledDefault, "enable pprof")
 
 	err := configFlag.Parse(os.Args[1:])
 	if err != nil {
@@ -101,6 +104,8 @@ func initFlagConfig(appConfig *Config) error {
 		appConfig.DataBaseDsn = *flagDataBaseDsn
 
 	}
+	appConfig.PprofEnabled = *pprofEnabled
+
 	appConfig.DataBaseDsn = strings.ReplaceAll(appConfig.DataBaseDsn, "\"", "")
 	return nil
 }
