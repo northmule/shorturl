@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"github.com/northmule/shorturl/cmd/client"
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/url"
-	"github.com/northmule/shorturl/internal/app/storage"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/northmule/shorturl/cmd/client"
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/url"
+	"github.com/northmule/shorturl/internal/app/storage"
 )
 
 // TestShortenerHandler тест обработчика для декодирования ссылки

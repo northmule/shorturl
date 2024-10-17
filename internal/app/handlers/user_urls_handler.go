@@ -3,14 +3,15 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"github.com/northmule/shorturl/internal/app/workers"
-	"io"
-	"net/http"
 )
 
 type UserURLsHandler struct {

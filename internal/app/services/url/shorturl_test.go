@@ -2,10 +2,11 @@ package url
 
 import (
 	"fmt"
-	"github.com/northmule/shorturl/internal/app/storage"
-	"github.com/northmule/shorturl/internal/app/storage/models"
 	"strings"
 	"testing"
+
+	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
 // storageMock структура хранилища

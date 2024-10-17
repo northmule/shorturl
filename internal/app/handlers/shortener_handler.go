@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"io"
-	"net/http"
-	"strings"
 )
 
 type ShortenerHandler struct {

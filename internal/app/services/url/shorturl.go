@@ -2,12 +2,13 @@ package url
 
 import (
 	"errors"
+	"math/rand"
+	"time"
+
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"math/rand"
-	"time"
 )
 
 const ShortURLDefaultSize = 10

@@ -4,9 +4,10 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/northmule/shorturl/internal/app/logger"
 	"net/http"
 	"time"
+
+	"github.com/northmule/shorturl/internal/app/logger"
 )
 
 // idCookieSize размер в байтах места под id пользователя

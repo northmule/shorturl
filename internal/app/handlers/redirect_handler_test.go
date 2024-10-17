@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"errors"
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/url"
-	"github.com/northmule/shorturl/internal/app/storage"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/url"
+	"github.com/northmule/shorturl/internal/app/storage"
 )
 
 // TestRedirectHandler тест обработчика для декодирования ссылки

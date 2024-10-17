@@ -1,10 +1,11 @@
 package middlewarehandler
 
 import (
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/compressor"
 	"net/http"
 	"strings"
+
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/compressor"
 )
 
 // Ожидаемые типы

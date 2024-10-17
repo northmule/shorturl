@@ -2,10 +2,11 @@ package config
 
 import (
 	"flag"
-	"github.com/caarlos0/env"
-	"github.com/northmule/shorturl/internal/app/logger"
 	"os"
 	"strings"
+
+	"github.com/caarlos0/env"
+	"github.com/northmule/shorturl/internal/app/logger"
 )
 
 // Приоритет параметров сервера должен быть таким:

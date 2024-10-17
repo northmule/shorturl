@@ -1,15 +1,16 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	"net/http/pprof"
+	"os"
+
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/handlers"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
-	"log"
-	"net/http"
-	"net/http/pprof"
-	"os"
 )
 
 func main() {

@@ -3,13 +3,14 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"time"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage/migrations"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	_ "go.uber.org/mock/mockgen/model"
-	"time"
 )
 
 const CodeErrorDuplicateKey = "23505"

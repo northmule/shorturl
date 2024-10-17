@@ -3,11 +3,12 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/storage/models"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
 type demoData []models.URL

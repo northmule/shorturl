@@ -4,10 +4,11 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/northmule/shorturl/internal/app/logger"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/northmule/shorturl/internal/app/logger"
 )
 
 func TestGetUserToken(t *testing.T) {
