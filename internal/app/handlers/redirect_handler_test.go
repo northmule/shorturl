@@ -95,3 +95,27 @@ func TestRedirectHandler(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkRedirectHandler(b *testing.B) {
+	_ = logger.NewLogger("fatal")
+	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	stop := make(chan struct{})
+	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+	// Отключить переход по ссылке при положительном ответе сервиса
+	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		errorRedirect := errors.New("HTTP redirect blocked")
+		return errorRedirect
+	}
+	defer ts.Close()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		request, err := http.NewRequest(http.MethodGet, ts.URL+"/e98192e19505472476a49f10388428ab", nil)
+		if err != nil {
+			b.Error(err)
+		}
+		b.StartTimer()
+		response, err := ts.Client().Do(request)
+		response.Body.Close()
+	}
+}

@@ -12,16 +12,13 @@ import (
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"io"
 	"net/http"
-	"regexp"
+	"strings"
 )
 
-var regexURL = regexp.MustCompile(`(http|https)://\S+`)
-
 type ShortenerHandler struct {
-	regexURL *regexp.Regexp
-	service  *url.ShortURLService
-	finder   Finder
-	setter   Setter
+	service *url.ShortURLService
+	finder  Finder
+	setter  Setter
 }
 
 type ShortenerHandlerInterface interface {
@@ -30,10 +27,9 @@ type ShortenerHandlerInterface interface {
 
 func NewShortenerHandler(urlService *url.ShortURLService, storage url.StorageInterface) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{
-		regexURL: regexURL,
-		service:  urlService,
-		finder:   storage,
-		setter:   storage,
+		service: urlService,
+		finder:  storage,
+		setter:  storage,
 	}
 	return *shortenerHandler
 }
@@ -56,7 +52,8 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 	defer req.Body.Close()
 
 	// Проверяем, содержится ли в bodyValue URL
-	if !s.regexURL.Match(bodyValue) {
+	bodyString := string(bodyValue)
+	if !strings.Contains(bodyString, "http://") && !strings.Contains(bodyString, "https://") {
 		http.Error(res, "expected url", http.StatusBadRequest)
 		return
 	}
@@ -112,7 +109,7 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 	}
 
 	// Проверяем, содержится ли в bodyValue URL
-	if !s.regexURL.MatchString(shortenerRequest.URL) {
+	if !strings.Contains(shortenerRequest.URL, "http://") && !strings.Contains(shortenerRequest.URL, "https://") {
 		http.Error(res, "expected url", http.StatusBadRequest)
 		return
 	}
@@ -181,7 +178,7 @@ func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Req
 	}
 	urls := make([]string, 0)
 	for _, requestItem := range requestItems {
-		if !s.regexURL.MatchString(requestItem.OriginalURL) {
+		if !strings.Contains(requestItem.OriginalURL, "http://") && !strings.Contains(requestItem.OriginalURL, "https://") {
 			continue
 		}
 		urls = append(urls, requestItem.OriginalURL)
