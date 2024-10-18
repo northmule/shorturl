@@ -2,10 +2,11 @@ package storage
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/northmule/shorturl/internal/app/storage/models"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
 func TestMemoryStorage_StorageMethods(t *testing.T) {

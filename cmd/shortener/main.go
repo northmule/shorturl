@@ -1,14 +1,16 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	"net/http/pprof"
+	"os"
+
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/handlers"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
-	"log"
-	"net/http"
-	"os"
 )
 
 func main() {
@@ -36,7 +38,17 @@ func run() error {
 	shortURLService := url.NewShortURLService(storage)
 	logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)
 	stop := make(chan struct{})
-	return http.ListenAndServe(cfg.ServerURL, handlers.AppRoutes(shortURLService, stop))
+	routes := handlers.AppRoutes(shortURLService, stop)
+
+	if cfg.PprofEnabled {
+		routes.HandleFunc("/debug/pprof/", pprof.Index)
+		routes.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		routes.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		routes.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		routes.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	}
+
+	return http.ListenAndServe(cfg.ServerURL, routes)
 }
 
 func getStorage(cfg *config.Config) (url.StorageInterface, error) {

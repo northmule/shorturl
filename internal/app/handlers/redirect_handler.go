@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/northmule/shorturl/internal/app/services/url"
-	"net/http"
 )
 
 type RedirectHandler struct {

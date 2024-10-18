@@ -4,19 +4,21 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"github.com/northmule/shorturl/cmd/client"
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/url"
-	"github.com/northmule/shorturl/internal/app/storage"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/northmule/shorturl/cmd/client"
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/url"
+	"github.com/northmule/shorturl/internal/app/storage"
 )
 
 // TestShortenerHandler тест обработчика для декодирования ссылки
 func TestShortenerHandler(t *testing.T) {
+	_ = logger.NewLogger("info")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
 	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
@@ -324,4 +326,76 @@ func TestGzipCompression(t *testing.T) {
 			t.Error("Закодированный URL из ответа в БД не найден")
 		}
 	})
+}
+
+func BenchmarkShortenerHandler(b *testing.B) {
+	_ = logger.NewLogger("fatal")
+	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	stop := make(chan struct{})
+	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+	defer ts.Close()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		request, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBufferString("https://ya.ru"))
+		if err != nil {
+			b.Error(err)
+		}
+		request.Header.Set("Content-Type", "text/plain")
+		b.StartTimer()
+		res, err := client.ClientApp(client.Params{Request: request})
+		res.Body.Close()
+		if err != nil {
+			b.Error(err)
+		}
+
+	}
+}
+
+func BenchmarkShortenerJSONHandler(b *testing.B) {
+	_ = logger.NewLogger("fatal")
+	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	stop := make(chan struct{})
+	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+	defer ts.Close()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten", bytes.NewBufferString(`{"url":"https://ya.ru"}`))
+		if err != nil {
+			b.Error(err)
+		}
+		request.Header.Set("Content-Type", "text/plain")
+		b.StartTimer()
+		res, err := client.ClientApp(client.Params{Request: request})
+		res.Body.Close()
+		if err != nil {
+			b.Error(err)
+		}
+
+	}
+}
+
+func BenchmarkShortenerBatch(b *testing.B) {
+	_ = logger.NewLogger("fatal")
+	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	stop := make(chan struct{})
+	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+	defer ts.Close()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten/batch", bytes.NewBufferString(`[{"correlation_id":"1","original_url":"http://ya.ru"},{"correlation_id":"2","original_url":"http://ya.ru/2"},{"correlation_id":"3","original_url":"http://ya.ru/3"},{"correlation_id":"4","original_url":"http://ya.ru/4"}]`))
+		if err != nil {
+			b.Error(err)
+		}
+		request.Header.Set("Content-Type", "text/plain")
+		b.StartTimer()
+		res, err := client.ClientApp(client.Params{Request: request})
+		res.Body.Close()
+		if err != nil {
+			b.Error(err)
+		}
+
+	}
 }

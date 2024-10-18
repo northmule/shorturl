@@ -1,10 +1,11 @@
 package middlewarehandler
 
 import (
-	"github.com/northmule/shorturl/internal/app/logger"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/northmule/shorturl/internal/app/logger"
 )
 
 type loggingData struct {

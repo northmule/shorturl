@@ -3,6 +3,10 @@ package middlewarehandler
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	AppContext "github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
@@ -10,9 +14,6 @@ import (
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"net/http"
-	"strings"
-	"time"
 )
 
 const defaultUUID = "a4a45d8d-cd8b-47a7-a7a1-4bafcf3d1111"

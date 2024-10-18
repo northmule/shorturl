@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	"github.com/northmule/shorturl/internal/app/storage/models"
 	"sync"
+
+	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
 // MemoryStorage структура хранилища

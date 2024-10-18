@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/northmule/shorturl/internal/app/logger"
 	mocks "github.com/northmule/shorturl/internal/app/storage/mock"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"go.uber.org/mock/gomock"
-	"testing"
 )
 
 type testResult struct {
