@@ -7,14 +7,17 @@ import (
 	"github.com/northmule/shorturl/internal/app/services/url"
 )
 
+// RedirectHandler хэндлер для обработки коротких ссылок.
 type RedirectHandler struct {
 	service *url.ShortURLService
 }
 
-type RedirectHandlerInterface interface {
+// IRedirectHandler общий интерфейс.
+type IRedirectHandler interface {
 	RedirectHandler(res http.ResponseWriter, req *http.Request)
 }
 
+// NewRedirectHandler конструктор хэндлера.
 func NewRedirectHandler(urlService *url.ShortURLService) RedirectHandler {
 	redirectHandler := &RedirectHandler{
 		service: urlService,
@@ -22,7 +25,7 @@ func NewRedirectHandler(urlService *url.ShortURLService) RedirectHandler {
 	return *redirectHandler
 }
 
-// RedirectHandler обработчик получения оригинальной ссылки из короткой
+// RedirectHandler обработчик получения оригинальной ссылки из короткой.
 func (r *RedirectHandler) RedirectHandler(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 	if id == "" {

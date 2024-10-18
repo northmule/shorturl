@@ -14,13 +14,16 @@ import (
 // Если нет переменной окружения, но есть аргумент командной строки (флаг), то используется он.
 // Если нет ни переменной окружения, ни флага, то используется значение по умолчанию.
 
-const addressAndPortDefault = ":8080"
-const baseAddressDefault = "http://localhost:8080"
-const pathFileStorage = "/tmp/short-url-db.json"
-const DataBaseConnectionTimeOut = 10000
-const pprofEnabledDefault = true
+// Параметры по умолчанию.
+const (
+	addressAndPortDefault     = ":8080"
+	baseAddressDefault        = "http://localhost:8080"
+	pathFileStorage           = "/tmp/short-url-db.json"
+	DataBaseConnectionTimeOut = 10000
+	pprofEnabledDefault       = true
+)
 
-// Config Конфигурация приложения
+// Config Конфигурация приложения.
 type Config struct {
 	// Адрес сервера и порт
 	ServerURL string `env:"SERVER_ADDRESS"`
@@ -34,15 +37,16 @@ type Config struct {
 	PprofEnabled bool   `env:"PPROF_ENABLED"`
 }
 
+// InitConfig инициализация настроек приложения.
 type InitConfig interface {
 	InitEnvConfig() error
 	InitFlagConfig() error
 }
 
-// AppConfig глобальная переменная конфигурации
+// AppConfig глобальная переменная конфигурации.
 var AppConfig Config
 
-// NewConfig Инициализация конфигурации приложения
+// NewConfig Инициализация конфигурации приложения.
 func NewConfig() (*Config, error) {
 	AppConfig = Config{}
 	err := AppConfig.InitEnvConfig()
@@ -56,15 +60,17 @@ func NewConfig() (*Config, error) {
 	return &AppConfig, nil
 }
 
+// InitEnvConfig разбор настроек из env.
 func (c *Config) InitEnvConfig() error {
 	return initEnvConfig(c)
 }
 
+// InitFlagConfig разбор настроек из флагов.
 func (c *Config) InitFlagConfig() error {
 	return initFlagConfig(c)
 }
 
-// initEnvConfig прасинг env переменных
+// initEnvConfig прасинг env переменных.
 func initEnvConfig(appConfig *Config) error {
 	// Заполнение значений из окружения
 	err := env.Parse(appConfig)
@@ -74,7 +80,7 @@ func initEnvConfig(appConfig *Config) error {
 	return nil
 }
 
-// initFlagConfig парсинг флагов командной строки
+// initFlagConfig парсинг флагов командной строки.
 func initFlagConfig(appConfig *Config) error {
 	// На каждый новый запуск новая структура флагов
 	configFlag := flag.FlagSet{}

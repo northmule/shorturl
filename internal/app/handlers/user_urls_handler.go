@@ -14,12 +14,14 @@ import (
 	"github.com/northmule/shorturl/internal/app/workers"
 )
 
+// UserURLsHandler хэндлер отображения ссылок пользователя.
 type UserURLsHandler struct {
 	finder  FinderURLs
 	session *storage.Session
 	worker  *workers.Worker
 }
 
+// NewUserUrlsHandler Конструктор.
 func NewUserUrlsHandler(finder FinderURLs, sessionStorage *storage.Session, worker *workers.Worker) *UserURLsHandler {
 	instance := UserURLsHandler{
 		finder:  finder,
@@ -29,6 +31,7 @@ func NewUserUrlsHandler(finder FinderURLs, sessionStorage *storage.Session, work
 	return &instance
 }
 
+// ResponseView структура ответа для просмотра.
 type ResponseView struct {
 	ShortURL    string `json:"short_Url"`
 	OriginalURL string `json:"original_url"`
@@ -38,7 +41,7 @@ type FinderURLs interface {
 	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
 }
 
-// View коротки ссылки пользователя
+// View коротки ссылки пользователя.
 func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	userUUID := u.getUserUUID(res, req)
 	logger.LogSugar.Infof("Получен запрос на просмотр URL для пользователя с uuid: %s", userUUID)
@@ -75,8 +78,10 @@ func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// RequestDelete запрос на удаление адресов.
 type RequestDelete []string
 
+// Delete удаление ссылок текущего пользователя.
 func (u *UserURLsHandler) Delete(res http.ResponseWriter, req *http.Request) {
 	userUUID := u.getUserUUID(res, req)
 	logger.LogSugar.Infof("Получен запрос на удаление для пользователя с uuid: %s", userUUID)

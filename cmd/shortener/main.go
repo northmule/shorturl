@@ -51,7 +51,7 @@ func run() error {
 	return http.ListenAndServe(cfg.ServerURL, routes)
 }
 
-func getStorage(cfg *config.Config) (url.StorageInterface, error) {
+func getStorage(cfg *config.Config) (url.IStorage, error) {
 
 	if cfg.DataBaseDsn != "" {
 		s, err := appStorage.NewPostgresStorage(cfg.DataBaseDsn)

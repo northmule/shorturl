@@ -2,21 +2,26 @@ package storage
 
 import "sync"
 
-// SessionStorage данные по авторизованным пользователям
+// SessionStorage данные по авторизованным пользователям.
 type SessionStorage struct {
 	Values map[string]string
 	mx     sync.RWMutex
 }
 
+// NewSessionStorage конструктор.
 func NewSessionStorage() Session {
 	return &SessionStorage{
 		Values: make(map[string]string, 100),
 	}
 }
 
+// Session метод работы с хранилищем.
 type Session interface {
+	// Add добавить новую запись.
 	Add(key string, value string)
+	// Get получить запись по ключу.
 	Get(key string) (string, bool)
+	// GetAll получить все записи из хранилища.
 	GetAll() map[string]string
 }
 

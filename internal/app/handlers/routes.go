@@ -10,7 +10,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/workers"
 )
 
-// AppRoutes маршруты приложения
+// AppRoutes маршруты приложения.
 func AppRoutes(shortURLService *url.ShortURLService, stop <-chan struct{}) chi.Router {
 	r := chi.NewRouter()
 

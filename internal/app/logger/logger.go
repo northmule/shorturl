@@ -4,10 +4,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// Log будет доступен всему коду как синглтон.
+// Log глобальный логгер.
 var Log *zap.Logger = zap.NewNop()
+
+// LogSugar глобальный логгер sugar.
 var LogSugar *zap.SugaredLogger
 
+// NewLogger конструктор.
 func NewLogger(level string) error {
 	// преобразуем текстовый уровень логирования в zap.AtomicLevel
 	lvl, err := zap.ParseAtomicLevel(level)

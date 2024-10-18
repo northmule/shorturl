@@ -7,7 +7,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
-// MemoryStorage структура хранилища
+// MemoryStorage структура хранилища в памяти.
 type MemoryStorage struct {
 	db          *map[string]models.URL
 	users       map[int]models.User
@@ -16,6 +16,7 @@ type MemoryStorage struct {
 	mx sync.RWMutex
 }
 
+// NewMemoryStorage конструктор хранилища.
 func NewMemoryStorage() *MemoryStorage {
 	databaseData := make(map[string]models.URL, 1000)
 	// Демо данные
@@ -34,7 +35,7 @@ func NewMemoryStorage() *MemoryStorage {
 	return &instance
 }
 
-// Add добавление нового значения
+// Add добавление нового значения.
 func (s *MemoryStorage) Add(url models.URL) (int64, error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
@@ -84,7 +85,7 @@ func (s *MemoryStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	return nil, fmt.Errorf("the short link was not found")
 }
 
-// FindByURL поиск по URL
+// FindByURL поиск по URL.
 func (s *MemoryStorage) FindByURL(url string) (*models.URL, error) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()

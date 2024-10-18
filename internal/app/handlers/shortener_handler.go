@@ -16,17 +16,19 @@ import (
 	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
+// ShortenerHandler хэндлер сокращения ссылок.
 type ShortenerHandler struct {
 	service *url.ShortURLService
 	finder  Finder
 	setter  Setter
 }
 
-type ShortenerHandlerInterface interface {
+type IShortenerHandler interface {
 	ShortenerHandler(res http.ResponseWriter, req *http.Request)
 }
 
-func NewShortenerHandler(urlService *url.ShortURLService, storage url.StorageInterface) ShortenerHandler {
+// NewShortenerHandler конструктор.
+func NewShortenerHandler(urlService *url.ShortURLService, storage url.IStorage) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{
 		service: urlService,
 		finder:  storage,
@@ -35,15 +37,17 @@ func NewShortenerHandler(urlService *url.ShortURLService, storage url.StorageInt
 	return *shortenerHandler
 }
 
+// Finder интерфейс поиска URL-s.
 type Finder interface {
 	FindByURL(url string) (*models.URL, error)
 }
 
+// Setter интерфейс связывания URL с пользователем.
 type Setter interface {
 	LikeURLToUser(urlID int64, userUUID string) error
 }
 
-// ShortenerHandler обработчик создания короткой ссылки
+// ShortenerHandler обработчик создания короткой ссылки.
 func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.Request) {
 	bodyValue, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -52,7 +56,7 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 	}
 	defer req.Body.Close()
 
-	// Проверяем, содержится ли в bodyValue URL
+	// Проверяем, содержится ли в bodyValue URL.
 	bodyString := string(bodyValue)
 	if !strings.Contains(bodyString, "http://") && !strings.Contains(bodyString, "https://") {
 		http.Error(res, "expected url", http.StatusBadRequest)
@@ -85,14 +89,17 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 	}
 }
 
+// ShortenerRequest запрос к методу ShortenerJSONHandler.
 type ShortenerRequest struct {
 	URL string `json:"URL"`
 }
+
+// JSONResponse ответ от метода ShortenerJSONHandler.
 type JSONResponse struct {
 	Result string `json:"result"`
 }
 
-// ShortenerJSONHandler принимает и отдаёт json
+// ShortenerJSONHandler принимает и отдаёт json.
 func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *http.Request) {
 
 	bodyValue, err := io.ReadAll(req.Body)
@@ -151,17 +158,19 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 	}
 }
 
+// BatchRequest запрос для списка адресов.
 type BatchRequest struct {
 	CorrelationID string `json:"correlation_id"`
 	OriginalURL   string `json:"original_url"`
 }
 
+// BatchResponse ответ для списка адресов.
 type BatchResponse struct {
 	CorrelationID string `json:"correlation_id"`
 	ShortURL      string `json:"short_url"`
 }
 
-// ShortenerBatch обработка списка адресов
+// ShortenerBatch обработка списка адресов.
 func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Request) {
 
 	bodyValue, err := io.ReadAll(req.Body)

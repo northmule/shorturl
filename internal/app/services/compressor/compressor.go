@@ -17,6 +17,7 @@ type GzipReader struct {
 	Reader   *gzip.Reader
 }
 
+// NewGzipWriter Конструктор записи.
 func NewGzipWriter(response http.ResponseWriter) *GzipWriter {
 	return &GzipWriter{
 		Response: response,
@@ -24,6 +25,7 @@ func NewGzipWriter(response http.ResponseWriter) *GzipWriter {
 	}
 }
 
+// NewGzipReader Конструктор чтение.
 func NewGzipReader(reader io.ReadCloser) (*GzipReader, error) {
 	gzipReader, err := gzip.NewReader(reader)
 	if err != nil {
@@ -35,11 +37,12 @@ func NewGzipReader(reader io.ReadCloser) (*GzipReader, error) {
 	}, nil
 }
 
+// Header загологвки.
 func (g *GzipWriter) Header() http.Header {
 	return g.Response.Header()
 }
 
-// Упакованные данные отправляемые клиенту
+// Write Упакованные данные отправляемые клиенту.
 func (g *GzipWriter) Write(buffer []byte) (int, error) {
 	g.Response.Header().Set("Content-Length", strconv.Itoa(len(buffer)))
 	return g.Writer.Write(buffer)

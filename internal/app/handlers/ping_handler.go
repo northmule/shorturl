@@ -7,17 +7,19 @@ import (
 	"github.com/northmule/shorturl/internal/app/services/url"
 )
 
+// PingHandler хэндлер для обработки ping запроса.
 type PingHandler struct {
-	storage url.StorageInterface
+	storage url.IStorage
 }
 
-func NewPingHandler(storage url.StorageInterface) *PingHandler {
+// NewPingHandler конструктор.
+func NewPingHandler(storage url.IStorage) *PingHandler {
 	return &PingHandler{
 		storage: storage,
 	}
 }
 
-// CheckStorageConnect обработка запроса проверки соединения с БД /ping
+// CheckStorageConnect обработка запроса проверки соединения с БД /ping.
 func (p *PingHandler) CheckStorageConnect(res http.ResponseWriter, req *http.Request) {
 	err := p.storage.Ping()
 	if err != nil {

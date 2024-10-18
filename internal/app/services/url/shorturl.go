@@ -11,8 +11,10 @@ import (
 	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
+// ShortURLDefaultSize размер короткой ссылки.
 const ShortURLDefaultSize = 10
 
+// ShortURLData параметры данных сервиса.
 type ShortURLData struct {
 	URL       string
 	ShortURL  string
@@ -20,25 +22,36 @@ type ShortURLData struct {
 	DeletedAt time.Time
 }
 
+// ShortURLService сервис сокращения ссылок.
 type ShortURLService struct {
-	Storage      StorageInterface
+	Storage      IStorage
 	shortURLData ShortURLData
 }
 
-// StorageInterface методы
-type StorageInterface interface {
+// IStorage методы.
+type IStorage interface {
+	// Add добавляет URL.
 	Add(url models.URL) (int64, error)
+	// CreateUser создание пользователя.
 	CreateUser(user models.User) (int64, error)
+	// LikeURLToUser связывает пользователя с ссылкой.
 	LikeURLToUser(urlID int64, userUUID string) error
+	// FindByShortURL поиск по короткой ссылке.
 	FindByShortURL(shortURL string) (*models.URL, error)
+	// FindByURL поиск по URL.
 	FindByURL(url string) (*models.URL, error)
+	// Ping проверка соединения с БД.
 	Ping() error
+	// MultiAdd вставка массива адресов.
 	MultiAdd(urls []models.URL) error
+	// FindUrlsByUserID поиск ссылок пользователя
 	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
+	// SoftDeletedShortURL пометка ссылки как удалённой.
 	SoftDeletedShortURL(userUUID string, shortURL ...string) error
 }
 
-func NewShortURLService(storage StorageInterface) *ShortURLService {
+// NewShortURLService конструктор сервиса.
+func NewShortURLService(storage IStorage) *ShortURLService {
 	service := &ShortURLService{
 		Storage: storage,
 	}
@@ -46,7 +59,7 @@ func NewShortURLService(storage StorageInterface) *ShortURLService {
 	return service
 }
 
-// DecodeURL вернёт короткий url
+// DecodeURL вернёт короткий url.
 func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) {
 	modelURL, _ := s.Storage.FindByURL(url)
 	if modelURL.ShortURL != "" {
@@ -71,7 +84,7 @@ func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) 
 	return &s.shortURLData, nil
 }
 
-// DecodeURLs преобразование массива url
+// DecodeURLs преобразование массива url.
 func (s *ShortURLService) DecodeURLs(urls []string) ([]models.URL, error) {
 	modelURLs := make([]models.URL, len(urls))
 	modelURL := new(models.URL)
@@ -87,7 +100,7 @@ func (s *ShortURLService) DecodeURLs(urls []string) ([]models.URL, error) {
 	return modelURLs, nil
 }
 
-// EncodeShortURL вернёт полный url
+// EncodeShortURL вернёт полный url.
 func (s *ShortURLService) EncodeShortURL(shortURL string) (data *ShortURLData, err error) {
 	modelURL, err := s.Storage.FindByShortURL(shortURL)
 	if err != nil {

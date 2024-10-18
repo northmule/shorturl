@@ -101,7 +101,7 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		storage  url.StorageInterface
+		storage  url.IStorage
 		wantBody string
 		wantCode int
 	}{

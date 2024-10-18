@@ -13,8 +13,10 @@ import (
 	_ "go.uber.org/mock/mockgen/model"
 )
 
+// CodeErrorDuplicateKey код ошибки с дублем записи в БД.
 const CodeErrorDuplicateKey = "23505"
 
+// DBQuery общие методы для работы с хранилищем.
 type DBQuery interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
@@ -23,6 +25,7 @@ type DBQuery interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
+// PostgresStorage хранилище в БД.
 type PostgresStorage struct {
 	DB                   DBQuery
 	requestSoftDeleteURL *sql.Stmt
@@ -30,7 +33,7 @@ type PostgresStorage struct {
 	requestLikeURLToUser *sql.Stmt
 }
 
-// NewPostgresStorage PostgresStorage настройка подключения к БД
+// NewPostgresStorage конструктор подключения к БД.
 func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
 	// Example: "host=%s port=%s user=%s password=%s dbname=%s sslmode=disable"
 	db, err := sql.Open("pgx", dsn)
@@ -63,7 +66,7 @@ func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
 	return instance, err
 }
 
-// Add добавление нового значения
+// Add добавление нового значения.
 func (p *PostgresStorage) Add(url models.URL) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
@@ -73,7 +76,7 @@ func (p *PostgresStorage) Add(url models.URL) (int64, error) {
 	return urlID, err
 }
 
-// CreateUser добавление нового значения
+// CreateUser добавление нового значения.
 func (p *PostgresStorage) CreateUser(user models.User) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
@@ -91,7 +94,7 @@ func (p *PostgresStorage) LikeURLToUser(urlID int64, userUUID string) error {
 	return err
 }
 
-// FindByShortURL поиск по короткой ссылке
+// FindByShortURL поиск по короткой ссылке.
 func (p *PostgresStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
@@ -124,7 +127,7 @@ func (p *PostgresStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	return &url, nil
 }
 
-// FindByURL поиск по URL
+// FindByURL поиск по URL.
 func (p *PostgresStorage) FindByURL(url string) (*models.URL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
@@ -154,14 +157,14 @@ func (p *PostgresStorage) FindByURL(url string) (*models.URL, error) {
 	return &modelURL, nil
 }
 
-// Ping проверка соединения
+// Ping проверка соединения.
 func (p *PostgresStorage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
 	return p.DB.PingContext(ctx)
 }
 
-// MultiAdd Вставка значений в бд пачками
+// MultiAdd Вставка значений в бд пачками.
 func (p *PostgresStorage) MultiAdd(urls []models.URL) error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()

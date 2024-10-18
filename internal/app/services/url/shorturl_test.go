@@ -72,7 +72,7 @@ func TestShortURLService_DecodeURL(t *testing.T) {
 	NewShortURLService(storageMock)
 
 	type fields struct {
-		Storage      StorageInterface
+		Storage      IStorage
 		shortURLData ShortURLData
 	}
 	type args struct {
@@ -138,7 +138,7 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 	})
 
 	type fields struct {
-		Storage      StorageInterface
+		Storage      IStorage
 		shortURLData ShortURLData
 	}
 	type args struct {
@@ -190,7 +190,7 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		Storage StorageInterface
+		Storage IStorage
 		urls    []string
 		wantErr bool
 	}{

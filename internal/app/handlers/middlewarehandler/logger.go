@@ -16,13 +16,14 @@ type loggingData struct {
 	statusCode  int
 }
 
-// ResponseWriterWrapper структура для захвата ответа
+// ResponseWriterWrapper структура для захвата ответа.
 type ResponseWriterWrapper struct {
 	originResponse *http.ResponseWriter
 	originRequest  *http.Request
 	loggingData    *loggingData
 }
 
+// NewResponseWriterWrapper конструктор логгера.
 func NewResponseWriterWrapper(rw http.ResponseWriter, request http.Request) *ResponseWriterWrapper {
 	return &ResponseWriterWrapper{
 		originResponse: &rw,
@@ -31,7 +32,7 @@ func NewResponseWriterWrapper(rw http.ResponseWriter, request http.Request) *Res
 	}
 }
 
-// Write при записи ответа
+// Write при записи ответа.
 func (rww ResponseWriterWrapper) Write(buf []byte) (int, error) {
 	size, err := (*rww.originResponse).Write(buf)
 	if err != nil {
@@ -41,12 +42,12 @@ func (rww ResponseWriterWrapper) Write(buf []byte) (int, error) {
 	return size, nil
 }
 
-// Header срабатывает перед сеттом заголовка
+// Header срабатывает перед сеттом заголовка.
 func (rww ResponseWriterWrapper) Header() http.Header {
 	return (*rww.originResponse).Header()
 }
 
-// WriteHeader срабоатет при записи заголовков в основном запросе
+// WriteHeader срабоатет при записи заголовков в основном запросе.
 func (rww ResponseWriterWrapper) WriteHeader(statusCode int) {
 	(*rww.originResponse).WriteHeader(statusCode)
 
@@ -55,7 +56,7 @@ func (rww ResponseWriterWrapper) WriteHeader(statusCode int) {
 	rww.loggingData.url = rww.originRequest.URL.String()
 }
 
-// MiddlewareLogger логгер запросов/ответов
+// MiddlewareLogger логгер запросов/ответов.
 func MiddlewareLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		startTime := time.Now()

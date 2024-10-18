@@ -11,7 +11,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
-// FileStorage структура хранилища
+// FileStorage файловое хранилище.
 type FileStorage struct {
 	file        *os.File
 	scanner     *bufio.Scanner
@@ -20,6 +20,7 @@ type FileStorage struct {
 	deletedURLs *os.File
 }
 
+// NewFileStorage конструктор хранилища.
 func NewFileStorage(file *os.File) *FileStorage {
 	instance := &FileStorage{
 		file:        file,
@@ -46,7 +47,7 @@ func NewFileStorage(file *os.File) *FileStorage {
 	return instance
 }
 
-// Add добавление нового значения
+// Add добавление нового значения.
 func (f *FileStorage) Add(url models.URL) (int64, error) {
 	modelRaw, err := json.Marshal(url)
 	if err != nil {
@@ -64,6 +65,7 @@ func (f *FileStorage) Add(url models.URL) (int64, error) {
 	return 1, nil
 }
 
+// CreateUser создает пользователя
 func (f *FileStorage) CreateUser(user models.User) (int64, error) {
 	modelRaw, err := json.Marshal(user)
 	if err != nil {
@@ -97,7 +99,7 @@ func (f *FileStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) e
 	return nil
 }
 
-// FindByShortURL поиск по короткой ссылке
+// FindByShortURL поиск по короткой ссылке.
 func (f *FileStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	for _, value := range f.cacheValues {
 		if strings.Contains(value, fmt.Sprintf("\"%s\"", shortURL)) {
@@ -114,7 +116,7 @@ func (f *FileStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	return nil, fmt.Errorf("the short link was not found")
 }
 
-// FindByURL поиск по URL
+// FindByURL поиск по URL.
 func (f *FileStorage) FindByURL(url string) (*models.URL, error) {
 	for _, value := range f.cacheValues {
 		if strings.Contains(value, fmt.Sprintf("\"%s\"", url)) {
