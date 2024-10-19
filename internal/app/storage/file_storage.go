@@ -65,7 +65,7 @@ func (f *FileStorage) Add(url models.URL) (int64, error) {
 	return 1, nil
 }
 
-// CreateUser создает пользователя
+// CreateUser создает пользователя.
 func (f *FileStorage) CreateUser(user models.User) (int64, error) {
 	modelRaw, err := json.Marshal(user)
 	if err != nil {
@@ -81,11 +81,13 @@ func (f *FileStorage) CreateUser(user models.User) (int64, error) {
 	return 0, nil
 }
 
+// LikeURLToUser Связывание URL с пользователем.
 func (f *FileStorage) LikeURLToUser(urlID int64, userUUID string) error {
 	//todo
 	return nil
 }
 
+// MultiAdd Вставка массива.
 func (f *FileStorage) MultiAdd(urls []models.URL) error {
 	for _, url := range urls {
 		_, err := f.Add(url)
@@ -95,6 +97,8 @@ func (f *FileStorage) MultiAdd(urls []models.URL) error {
 	}
 	return nil
 }
+
+// SoftDeletedShortURL Отметка об удалении ссылки.
 func (f *FileStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	return nil
 }
@@ -131,18 +135,22 @@ func (f *FileStorage) FindByURL(url string) (*models.URL, error) {
 	return new(models.URL), nil
 }
 
+// FindUserByLoginAndPasswordHash Поиск пользователя.
 func (f *FileStorage) FindUserByLoginAndPasswordHash(login string, password string) (*models.User, error) {
 	return nil, nil
 }
 
+// FindUrlsByUserID поиск URL-s.
 func (f *FileStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	return nil, nil
 }
 
+// Close закрытие файла
 func (f *FileStorage) Close() error {
 	return f.file.Close()
 }
 
+// Ping проверка доступности.
 func (f *FileStorage) Ping() error {
 	_, err := os.Stat(f.file.Name())
 	if err != nil {

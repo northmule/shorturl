@@ -23,6 +23,7 @@ type ShortenerHandler struct {
 	setter  Setter
 }
 
+// IShortenerHandler интерфейс сокращателя.
 type IShortenerHandler interface {
 	ShortenerHandler(res http.ResponseWriter, req *http.Request)
 }

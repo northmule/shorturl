@@ -7,4 +7,5 @@ const (
 	KeyContext key = iota
 )
 
+// UserUUID UUID пользователя
 type UserUUID string

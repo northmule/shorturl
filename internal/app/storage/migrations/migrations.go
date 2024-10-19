@@ -1,5 +1,6 @@
 package migrations
 
+// Migrations01 таблица с URL
 const Migrations01 = `CREATE TABLE IF NOT EXISTS public.url_list (
            id int8 GENERATED ALWAYS AS IDENTITY NOT NULL,
            short_url varchar(100) NOT NULL,
@@ -11,6 +12,7 @@ const Migrations01 = `CREATE TABLE IF NOT EXISTS public.url_list (
 CREATE UNIQUE INDEX IF NOT EXISTS url_list_url_idx ON public.url_list (url) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS short_url_idx ON public.url_list USING btree (short_url)`
 
+// Migrations02 таблица с пользователями
 const Migrations02 = `CREATE TABLE IF NOT EXISTS public.users (
        id int8 GENERATED ALWAYS AS IDENTITY NOT NULL,
        name varchar(100) NOT NULL,
@@ -25,6 +27,7 @@ const Migrations02 = `CREATE TABLE IF NOT EXISTS public.users (
 CREATE INDEX IF NOT EXISTS users_login_password_idx ON public.users (login,"password");
 CREATE UNIQUE INDEX IF NOT EXISTS users_login_idx ON public.users (login) WHERE deleted_at IS NULL;`
 
+// Migrations03 Таблица с с сылками пользователя
 const Migrations03 = `CREATE TABLE IF NOT EXISTS public.user_short_url (
        id int8 GENERATED ALWAYS AS IDENTITY NOT NULL,
        user_id int8 NOT NULL,

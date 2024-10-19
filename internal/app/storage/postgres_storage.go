@@ -84,6 +84,7 @@ func (p *PostgresStorage) CreateUser(user models.User) (int64, error) {
 	return 0, err
 }
 
+// LikeURLToUser Связывание URL с пользователем.
 func (p *PostgresStorage) LikeURLToUser(urlID int64, userUUID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
@@ -195,6 +196,7 @@ func (p *PostgresStorage) MultiAdd(urls []models.URL) error {
 	return nil
 }
 
+// FindUserByLoginAndPasswordHash Поиск пользователя.
 func (p *PostgresStorage) FindUserByLoginAndPasswordHash(login string, passwordHash string) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
@@ -225,6 +227,7 @@ func (p *PostgresStorage) FindUserByLoginAndPasswordHash(login string, passwordH
 	return &user, nil
 }
 
+// FindUrlsByUserID поиск URL-s.
 func (p *PostgresStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
@@ -258,6 +261,7 @@ func (p *PostgresStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, erro
 	return &urls, nil
 }
 
+// SoftDeletedShortURL Отметка об удалении ссылки.
 func (p *PostgresStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()

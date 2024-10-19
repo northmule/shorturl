@@ -7,11 +7,13 @@ import (
 	"strconv"
 )
 
+// GzipWriter структура записи
 type GzipWriter struct {
 	Response http.ResponseWriter
 	Writer   *gzip.Writer
 }
 
+// GzipReader структура чтения
 type GzipReader struct {
 	IoReader io.ReadCloser
 	Reader   *gzip.Reader
@@ -48,6 +50,7 @@ func (g *GzipWriter) Write(buffer []byte) (int, error) {
 	return g.Writer.Write(buffer)
 }
 
+// WriteHeader Переопределение записи заголовков
 func (g *GzipWriter) WriteHeader(statusCode int) {
 	if statusCode < 300 {
 		g.Response.Header().Set("Content-Encoding", "gzip")
@@ -55,14 +58,17 @@ func (g *GzipWriter) WriteHeader(statusCode int) {
 	g.Response.WriteHeader(statusCode)
 }
 
+// Close Переопределение закрытия
 func (g *GzipWriter) Close() error {
 	return g.Writer.Close()
 }
 
+// Read Переопределение чтения
 func (g GzipReader) Read(buffer []byte) (n int, err error) {
 	return g.Reader.Read(buffer)
 }
 
+// Close Переопределение закрытия
 func (g GzipReader) Close() error {
 	if err := g.IoReader.Close(); err != nil {
 		return err

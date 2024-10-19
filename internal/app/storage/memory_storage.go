@@ -44,12 +44,14 @@ func (s *MemoryStorage) Add(url models.URL) (int64, error) {
 	return 1, nil
 }
 
+// CreateUser создает пользователя.
 func (s *MemoryStorage) CreateUser(user models.User) (int64, error) {
 	s.users[user.ID] = user
 	return int64(user.ID), nil
 
 }
 
+// SoftDeletedShortURL Отметка об удалении ссылки.
 func (s *MemoryStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	for _, shortURL := range shortURL {
 		s.deletedURLs[shortURL] = userUUID
@@ -57,11 +59,13 @@ func (s *MemoryStorage) SoftDeletedShortURL(userUUID string, shortURL ...string)
 	return nil
 }
 
+// LikeURLToUser Связывание URL с пользователем.
 func (s *MemoryStorage) LikeURLToUser(urlID int64, userUUID string) error {
 	//todo
 	return nil
 }
 
+// MultiAdd Вставка массива.
 func (s *MemoryStorage) MultiAdd(urls []models.URL) error {
 	for _, url := range urls {
 		s.removeItemByURL(url.URL)
@@ -73,7 +77,7 @@ func (s *MemoryStorage) MultiAdd(urls []models.URL) error {
 	return nil
 }
 
-// FindByShortURL поиск по короткой ссылке
+// FindByShortURL поиск по короткой ссылке.
 func (s *MemoryStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
@@ -105,17 +109,17 @@ func (s *MemoryStorage) removeItemByURL(url string) {
 	}
 }
 
-func (s *MemoryStorage) GetAll() (*map[string]models.URL, error) {
-	return s.db, nil
-}
-
+// Ping проверка доступности.
 func (s *MemoryStorage) Ping() error {
 	return nil
 }
 
+// FindUserByLoginAndPasswordHash Поиск пользователя.
 func (s *MemoryStorage) FindUserByLoginAndPasswordHash(login string, password string) (*models.User, error) {
 	return nil, nil
 }
+
+// FindUrlsByUserID поиск URL-s.
 func (s *MemoryStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	return nil, nil
 }

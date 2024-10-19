@@ -25,17 +25,20 @@ type Session interface {
 	GetAll() map[string]string
 }
 
+// Add добавить новую запись.
 func (s *SessionStorage) Add(key string, value string) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	s.Values[key] = value
 }
 
+// Get получить запись по ключу.
 func (s *SessionStorage) Get(key string) (string, bool) {
 	sessionUserUUID, ok := s.Values[key]
 	return sessionUserUUID, ok
 }
 
+// GetAll получить все записи из хранилища.
 func (s *SessionStorage) GetAll() map[string]string {
 	return s.Values
 }
