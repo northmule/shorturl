@@ -26,6 +26,10 @@ func NewRedirectHandler(urlService *url.ShortURLService) RedirectHandler {
 }
 
 // RedirectHandler обработчик получения оригинальной ссылки из короткой.
+// @Summary Преобразование короткой ссылки в оригинальную с переходом по ссылке
+// @Failure 410
+// @Success 307 {string} Location "origin_url"
+// @Router /{id} [get]
 func (r *RedirectHandler) RedirectHandler(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 	if id == "" {

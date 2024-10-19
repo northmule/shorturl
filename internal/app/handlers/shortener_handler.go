@@ -48,6 +48,11 @@ type Setter interface {
 }
 
 // ShortenerHandler обработчик создания короткой ссылки.
+// @Summary Получение короткой ссылки
+// @Failure 400
+// @Success 307 {string} Location "origin_url"
+// @Param url body string true "оригинальная ссылка для сокращения" SchemaExample(https://ya.ru/1)
+// @Router / [post]
 func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.Request) {
 	bodyValue, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -100,6 +105,11 @@ type JSONResponse struct {
 }
 
 // ShortenerJSONHandler принимает и отдаёт json.
+// @Summary Получение коротких ссылок
+// @Failure 400
+// @Success 200 {object} JSONResponse
+// @Param ShortenerJSONHandler body ShortenerRequest true "объект с сылками для сокращения"
+// @Router /api/shorten [post]
 func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *http.Request) {
 
 	bodyValue, err := io.ReadAll(req.Body)
@@ -171,6 +181,11 @@ type BatchResponse struct {
 }
 
 // ShortenerBatch обработка списка адресов.
+// @Summary Получение коротких ссылок
+// @Failure 400
+// @Success 200 {object} BatchResponse
+// @Param ShortenerBatch body BatchRequest true "объект с сылками для сокращения"
+// @Router /api/shorten/batch [post]
 func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Request) {
 
 	bodyValue, err := io.ReadAll(req.Body)
@@ -192,6 +207,10 @@ func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Req
 			continue
 		}
 		urls = append(urls, requestItem.OriginalURL)
+	}
+	if len(urls) == 0 {
+		http.Error(res, "error unmarshal json request", http.StatusBadRequest)
+		return
 	}
 	modelURLs, err := s.service.DecodeURLs(urls)
 	if err != nil {

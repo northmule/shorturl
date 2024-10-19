@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
-	"net/http/pprof"
 	"os"
 
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/handlers"
 	"github.com/northmule/shorturl/internal/app/logger"
@@ -13,6 +13,10 @@ import (
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
 )
 
+// @Title Shortener API
+// @Description Сервис сокращения URL
+// @Version 1.0
+// @host      localhost:8080
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
@@ -41,11 +45,7 @@ func run() error {
 	routes := handlers.AppRoutes(shortURLService, stop)
 
 	if cfg.PprofEnabled {
-		routes.HandleFunc("/debug/pprof/", pprof.Index)
-		routes.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		routes.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		routes.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		routes.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		routes.Mount("/debug", middleware.Profiler())
 	}
 
 	return http.ListenAndServe(cfg.ServerURL, routes)

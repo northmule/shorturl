@@ -20,6 +20,10 @@ func NewPingHandler(storage url.IStorage) *PingHandler {
 }
 
 // CheckStorageConnect обработка запроса проверки соединения с БД /ping.
+// @Summary Проверка подключения к БД
+// @Success 200 {json} {ok}
+// @Failure 500 {string} string "Не удалось подключиться к БД"
+// @Router /ping [get]
 func (p *PingHandler) CheckStorageConnect(res http.ResponseWriter, req *http.Request) {
 	err := p.storage.Ping()
 	if err != nil {

@@ -42,6 +42,11 @@ type FinderURLs interface {
 }
 
 // View коротки ссылки пользователя.
+// @Summary Просмотр коротких ссылок пользователя
+// @Failure 500
+// @Failure 400
+// @Success 200 {object} ResponseView
+// @Router /api/user/urls [get]
 func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	userUUID := u.getUserUUID(res, req)
 	logger.LogSugar.Infof("Получен запрос на просмотр URL для пользователя с uuid: %s", userUUID)
@@ -82,6 +87,11 @@ func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 type RequestDelete []string
 
 // Delete удаление ссылок текущего пользователя.
+// @Summary Удаление ссылок пользователем
+// @Failure 400
+// @Success 202
+// @Param Delete body RequestDelete true "объект с сылками для удаления"
+// @Router /api/user/urls [delete]
 func (u *UserURLsHandler) Delete(res http.ResponseWriter, req *http.Request) {
 	userUUID := u.getUserUUID(res, req)
 	logger.LogSugar.Infof("Получен запрос на удаление для пользователя с uuid: %s", userUUID)
