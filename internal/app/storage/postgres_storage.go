@@ -27,10 +27,8 @@ type DBQuery interface {
 
 // PostgresStorage хранилище в БД.
 type PostgresStorage struct {
-	DB                   DBQuery
-	requestSoftDeleteURL *sql.Stmt
-	requestCreateUser    *sql.Stmt
-	requestLikeURLToUser *sql.Stmt
+	DB    DBQuery
+	RawDB *sql.DB
 }
 
 // NewPostgresStorage конструктор подключения к БД.
@@ -41,28 +39,10 @@ func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
 		return nil, err
 	}
 	instance := &PostgresStorage{
-		DB: db,
+		DB:    db,
+		RawDB: db,
 	}
 
-	err = instance.createTable()
-	if err != nil {
-		logger.LogSugar.Error(err.Error())
-	}
-
-	instance.requestSoftDeleteURL, err = db.Prepare(`update url_list set deleted_at=now() where short_url = ANY($1)
-				and id in (
-					select uu.url_id from user_short_url as uu where uu.user_id =
-					                                    (select us.id from users as us where us.uuid=$2 limit 1)
-	)`)
-	if err != nil {
-		logger.LogSugar.Error(err.Error())
-	}
-	instance.requestCreateUser, err = db.Prepare(`
-			insert into users (name, login, password, uuid) values ($1, $2, $3, $4) ON CONFLICT (uuid) DO UPDATE SET uuid = $4 returning id`)
-	if err != nil {
-		logger.LogSugar.Error(err.Error())
-	}
-	instance.requestLikeURLToUser, err = db.Prepare(`insert into user_short_url (user_id, url_id) values ((select id from users where uuid=$1 limit 1), $2)`)
 	return instance, err
 }
 
@@ -80,7 +60,8 @@ func (p *PostgresStorage) Add(url models.URL) (int64, error) {
 func (p *PostgresStorage) CreateUser(user models.User) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
-	_, err := p.requestCreateUser.ExecContext(ctx, user.Name, user.Login, user.Password, user.UUID)
+	_, err := p.DB.ExecContext(ctx, `
+			insert into users (name, login, password, uuid) values ($1, $2, $3, $4) ON CONFLICT (uuid) DO UPDATE SET uuid = $4 returning id`, user.Name, user.Login, user.Password, user.UUID)
 	return 0, err
 }
 
@@ -88,7 +69,7 @@ func (p *PostgresStorage) CreateUser(user models.User) (int64, error) {
 func (p *PostgresStorage) LikeURLToUser(urlID int64, userUUID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
-	_, err := p.requestLikeURLToUser.ExecContext(ctx, userUUID, urlID)
+	_, err := p.DB.ExecContext(ctx, `insert into user_short_url (user_id, url_id) values ((select id from users where uuid=$1 limit 1), $2)`, userUUID, urlID)
 	if err != nil {
 		logger.LogSugar.Error(err.Error())
 	}
@@ -265,7 +246,11 @@ func (p *PostgresStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, erro
 func (p *PostgresStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
-	_, err := p.requestSoftDeleteURL.ExecContext(ctx, shortURL, userUUID)
+	_, err := p.DB.ExecContext(ctx, `update url_list set deleted_at=now() where short_url = ANY($1)
+				and id in (
+					select uu.url_id from user_short_url as uu where uu.user_id =
+					                                    (select us.id from users as us where us.uuid=$2 limit 1)
+	)`, shortURL, userUUID)
 	return err
 }
 
