@@ -2,17 +2,18 @@ package handlers
 
 import (
 	"errors"
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/url"
-	"github.com/northmule/shorturl/internal/app/storage"
-	"github.com/northmule/shorturl/internal/app/storage/models"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/url"
+	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/storage/models"
+	"github.com/stretchr/testify/mock"
 )
 
 type MockPostgresStorageOk struct {
@@ -100,7 +101,7 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		storage  url.StorageInterface
+		storage  url.IStorage
 		wantBody string
 		wantCode int
 	}{

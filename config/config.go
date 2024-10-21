@@ -2,10 +2,11 @@ package config
 
 import (
 	"flag"
-	"github.com/caarlos0/env"
-	"github.com/northmule/shorturl/internal/app/logger"
 	"os"
 	"strings"
+
+	"github.com/caarlos0/env"
+	"github.com/northmule/shorturl/internal/app/logger"
 )
 
 // Приоритет параметров сервера должен быть таким:
@@ -13,12 +14,16 @@ import (
 // Если нет переменной окружения, но есть аргумент командной строки (флаг), то используется он.
 // Если нет ни переменной окружения, ни флага, то используется значение по умолчанию.
 
-const addressAndPortDefault = ":8080"
-const baseAddressDefault = "http://localhost:8080"
-const pathFileStorage = "/tmp/short-url-db.json"
-const DataBaseConnectionTimeOut = 10000
+// Параметры по умолчанию.
+const (
+	addressAndPortDefault     = ":8080"
+	baseAddressDefault        = "http://localhost:8080"
+	pathFileStorage           = "/tmp/short-url-db.json"
+	DataBaseConnectionTimeOut = 10000
+	pprofEnabledDefault       = true
+)
 
-// Config Конфигурация приложения
+// Config Конфигурация приложения.
 type Config struct {
 	// Адрес сервера и порт
 	ServerURL string `env:"SERVER_ADDRESS"`
@@ -28,18 +33,20 @@ type Config struct {
 	// Путь для хранения ссылок
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	// Строка подключения к БД
-	DataBaseDsn string `env:"DATABASE_DSN"`
+	DataBaseDsn  string `env:"DATABASE_DSN"`
+	PprofEnabled bool   `env:"PPROF_ENABLED"`
 }
 
+// InitConfig инициализация настроек приложения.
 type InitConfig interface {
 	InitEnvConfig() error
 	InitFlagConfig() error
 }
 
-// AppConfig глобальная переменная конфигурации
+// AppConfig глобальная переменная конфигурации.
 var AppConfig Config
 
-// NewConfig Инициализация конфигурации приложения
+// NewConfig Инициализация конфигурации приложения.
 func NewConfig() (*Config, error) {
 	AppConfig = Config{}
 	err := AppConfig.InitEnvConfig()
@@ -53,15 +60,17 @@ func NewConfig() (*Config, error) {
 	return &AppConfig, nil
 }
 
+// InitEnvConfig разбор настроек из env.
 func (c *Config) InitEnvConfig() error {
 	return initEnvConfig(c)
 }
 
+// InitFlagConfig разбор настроек из флагов.
 func (c *Config) InitFlagConfig() error {
 	return initFlagConfig(c)
 }
 
-// initEnvConfig прасинг env переменных
+// initEnvConfig прасинг env переменных.
 func initEnvConfig(appConfig *Config) error {
 	// Заполнение значений из окружения
 	err := env.Parse(appConfig)
@@ -71,7 +80,7 @@ func initEnvConfig(appConfig *Config) error {
 	return nil
 }
 
-// initFlagConfig парсинг флагов командной строки
+// initFlagConfig парсинг флагов командной строки.
 func initFlagConfig(appConfig *Config) error {
 	// На каждый новый запуск новая структура флагов
 	configFlag := flag.FlagSet{}
@@ -81,6 +90,7 @@ func initFlagConfig(appConfig *Config) error {
 	flagFileStoragePath := configFlag.String("f", pathFileStorage, "the path to the file for storing links")
 	// Строка подключения базы данных
 	flagDataBaseDsn := configFlag.String("d", "", "specify the connection string to the database")
+	pprofEnabled := configFlag.Bool("pprof", pprofEnabledDefault, "enable pprof")
 
 	err := configFlag.Parse(os.Args[1:])
 	if err != nil {
@@ -101,6 +111,8 @@ func initFlagConfig(appConfig *Config) error {
 		appConfig.DataBaseDsn = *flagDataBaseDsn
 
 	}
+	appConfig.PprofEnabled = *pprofEnabled
+
 	appConfig.DataBaseDsn = strings.ReplaceAll(appConfig.DataBaseDsn, "\"", "")
 	return nil
 }

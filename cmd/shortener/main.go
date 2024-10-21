@@ -1,24 +1,38 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/northmule/shorturl/config"
+	"github.com/northmule/shorturl/db"
 	"github.com/northmule/shorturl/internal/app/handlers"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
-	"log"
-	"net/http"
-	"os"
 )
 
+// @Title Shortener API
+// @Description Сервис сокращения URL
+// @Version 1.0
+// @host      localhost:8080
 func main() {
-	if err := run(); err != nil {
+	appCtx, appStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer appStop()
+	if err := run(appCtx); err != nil {
 		log.Fatal(err)
 	}
 }
 
 // run преднастройка
-func run() error {
+func run(ctx context.Context) error {
 	err := logger.NewLogger("info")
 	if err != nil {
 		return err
@@ -28,18 +42,48 @@ func run() error {
 		return err
 	}
 
-	storage, err := getStorage(cfg)
+	storage, err := getStorage(ctx, cfg)
 	if err != nil {
 		return err
 	}
 
 	shortURLService := url.NewShortURLService(storage)
-	logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)
 	stop := make(chan struct{})
-	return http.ListenAndServe(cfg.ServerURL, handlers.AppRoutes(shortURLService, stop))
+	routes := handlers.AppRoutes(shortURLService, stop)
+
+	if cfg.PprofEnabled {
+		routes.Mount("/debug", middleware.Profiler())
+	}
+
+	httpServer := http.Server{
+		Addr:    cfg.ServerURL,
+		Handler: routes,
+	}
+	go func() {
+		<-ctx.Done()
+		logger.LogSugar.Info("Получин сигнал. Останавливаю сервер...")
+
+		shutdownCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		defer cancel()
+		err = httpServer.Shutdown(shutdownCtx)
+		if err != nil {
+			logger.LogSugar.Error(err)
+		}
+	}()
+
+	logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)
+	err = httpServer.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	if errors.Is(err, http.ErrServerClosed) {
+		logger.LogSugar.Info("Сервер остановлен")
+	}
+
+	return nil
 }
 
-func getStorage(cfg *config.Config) (url.StorageInterface, error) {
+func getStorage(ctx context.Context, cfg *config.Config) (url.IStorage, error) {
 
 	if cfg.DataBaseDsn != "" {
 		s, err := appStorage.NewPostgresStorage(cfg.DataBaseDsn)
@@ -47,6 +91,14 @@ func getStorage(cfg *config.Config) (url.StorageInterface, error) {
 			logger.LogSugar.Errorf("Failed NewPostgresStorage dsn: %s, %s", cfg.DataBaseDsn, err)
 			return nil, err
 		}
+
+		logger.LogSugar.Info("Инициализация миграций")
+		migrations := db.NewMigrations(s.RawDB)
+		err = migrations.Up(ctx)
+		if err != nil {
+			return nil, err
+		}
+
 		return s, nil
 	}
 

@@ -4,14 +4,17 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 )
 
+// workerNum количество воркеров.
 const workerNum = 1
 
+// Worker воркер удаления адресов пользователя.
 type Worker struct {
 	deleter  Deleter
 	jobChan  chan job
 	stopChan <-chan struct{}
 }
 
+// NewWorker конструктор.
 func NewWorker(deleter Deleter, stop <-chan struct{}) *Worker {
 	instance := Worker{
 		deleter: deleter,
@@ -26,6 +29,7 @@ func NewWorker(deleter Deleter, stop <-chan struct{}) *Worker {
 	return &instance
 }
 
+// Deleter в фоне удаляет адреса пользователей.
 type Deleter interface {
 	SoftDeletedShortURL(userUUID string, shortURL ...string) error
 }
@@ -35,6 +39,7 @@ type job struct {
 	url      []string
 }
 
+// Del удалить адреса у пользователя.
 func (w *Worker) Del(userUUID string, input []string) {
 	go w.producer(job{
 		userUUID: userUUID,

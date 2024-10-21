@@ -2,9 +2,11 @@ package url
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"testing"
 )
 
 // storageMock структура хранилища
@@ -70,7 +72,7 @@ func TestShortURLService_DecodeURL(t *testing.T) {
 	NewShortURLService(storageMock)
 
 	type fields struct {
-		Storage      StorageInterface
+		Storage      IStorage
 		shortURLData ShortURLData
 	}
 	type args struct {
@@ -136,7 +138,7 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 	})
 
 	type fields struct {
-		Storage      StorageInterface
+		Storage      IStorage
 		shortURLData ShortURLData
 	}
 	type args struct {
@@ -188,7 +190,7 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		Storage StorageInterface
+		Storage IStorage
 		urls    []string
 		wantErr bool
 	}{
@@ -242,5 +244,26 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func BenchmarkNewRandomString(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		newRandomString(ShortURLDefaultSize)
+	}
+}
+
+func BenchmarkDecodeURLs(b *testing.B) {
+	storageMock := storage.NewMemoryStorage()
+	service := &ShortURLService{
+		Storage:      storageMock,
+		shortURLData: ShortURLData{},
+	}
+	testData := strings.Repeat("A ", 100)
+	urls := strings.Split(testData, " ")
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		service.DecodeURLs(urls)
 	}
 }

@@ -1,15 +1,16 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/northmule/shorturl/internal/app/handlers/middlewarehandler"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/workers"
-	"net/http"
 )
 
-// AppRoutes маршруты приложения
+// AppRoutes маршруты приложения.
 func AppRoutes(shortURLService *url.ShortURLService, stop <-chan struct{}) chi.Router {
 	r := chi.NewRouter()
 
