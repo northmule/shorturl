@@ -78,3 +78,48 @@ func TestMemoryStorage_CreateUser(t *testing.T) {
 		t.Errorf("CreateUser() id = %v, want %v", id, user.ID)
 	}
 }
+
+func TestMemoryStorage_FindUserByLoginAndPasswordHash(t *testing.T) {
+	storage := NewMemoryStorage()
+	newUser := models.User{
+		Name:     "name",
+		Login:    "Login",
+		Password: "Password",
+		UUID:     uuid.NewString(),
+	}
+	_, _ = storage.CreateUser(newUser)
+	user, _ := storage.FindUserByLoginAndPasswordHash("Login", "Password")
+	if user.Login != "Login" {
+		t.Errorf("FindUserByLoginAndPasswordHash() Login = %v, want %v", user.Login, "Login")
+	}
+}
+
+func TestMemoryStorage__FindUrlsByUserID(t *testing.T) {
+	storage := NewMemoryStorage()
+	userUUID := "1111-2222-33333-44444"
+	_, _ = storage.CreateUser(models.User{
+		Name:     "name",
+		Login:    "Login",
+		Password: "Password",
+		UUID:     userUUID,
+	})
+	urlID, _ := storage.Add(models.URL{
+		ShortURL: "qqwww",
+		URL:      "https://google.com",
+	})
+	_ = storage.LikeURLToUser(urlID, userUUID)
+
+	userURLs, _ := storage.FindUrlsByUserID(userUUID)
+	if len(*userURLs) == 0 {
+		t.Errorf("FindUrlsByUserID() userURLs = %v, want %v", 0, 1)
+	}
+	var isExist bool
+	for _, u := range *userURLs {
+		if u.ShortURL == "qqwww" {
+			isExist = true
+		}
+	}
+	if !isExist {
+		t.Errorf("FindUrlsByUserID() userURLs = %v, want %v", 0, 1)
+	}
+}

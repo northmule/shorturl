@@ -93,7 +93,7 @@ func TestShortenerHandler(t *testing.T) {
 			}
 			urlModel, _ := shortURLService.Storage.FindByURL(tt.request.body)
 
-			if tt.want.isError == (urlModel != nil) {
+			if tt.want.isError == (urlModel.URL != "") {
 				t.Error("URL не найден")
 			}
 		})
