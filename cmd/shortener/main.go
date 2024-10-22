@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -58,9 +59,14 @@ func run(ctx context.Context) error {
 	httpServer := http.Server{
 		Addr:    cfg.ServerURL,
 		Handler: routes,
+		BaseContext: func(net.Listener) context.Context {
+			return ctx
+		},
 	}
 	go func() {
 		<-ctx.Done()
+		// Отправка сигнала о завершении в канал воркерам
+		stop <- struct{}{}
 		logger.LogSugar.Info("Получин сигнал. Останавливаю сервер...")
 
 		shutdownCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
