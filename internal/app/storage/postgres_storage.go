@@ -8,7 +8,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/storage/migrations"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	_ "go.uber.org/mock/mockgen/model"
 )
@@ -252,55 +251,4 @@ func (p *PostgresStorage) SoftDeletedShortURL(userUUID string, shortURL ...strin
 					                                    (select us.id from users as us where us.uuid=$2 limit 1)
 	)`, shortURL, userUUID)
 	return err
-}
-
-// createTable создаёт необходимую таблицу при её отсутсвии
-func (p *PostgresStorage) createTable() error {
-	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
-	defer cancel()
-	tx, err := p.DB.Begin()
-	if err != nil {
-		return err
-	}
-
-	logger.LogSugar.Info("Попытка создать таблицу url_list")
-	_, err = p.DB.ExecContext(ctx, migrations.Migrations01)
-	if err != nil {
-		logger.LogSugar.Errorf("Ошибка создания таблицы: %s", err)
-		errR := tx.Rollback()
-		if errR != nil {
-			logger.LogSugar.Errorf("откат транзакции вызвал сбой: %s", errR)
-		}
-		return err
-	}
-
-	logger.LogSugar.Info("Попытка создать таблицу users")
-	_, err = p.DB.ExecContext(ctx, migrations.Migrations02)
-	if err != nil {
-		logger.LogSugar.Errorf("Ошибка создания таблицы: %s", err)
-		errR := tx.Rollback()
-		if errR != nil {
-			logger.LogSugar.Errorf("откат транзакции вызвал сбой: %s", errR)
-		}
-		return err
-	}
-
-	logger.LogSugar.Info("Попытка создать таблицу user_short_url")
-	_, err = p.DB.ExecContext(ctx, migrations.Migrations03)
-	if err != nil {
-		logger.LogSugar.Errorf("Ошибка создания таблицы: %s", err)
-		errR := tx.Rollback()
-		if errR != nil {
-			logger.LogSugar.Errorf("откат транзакции вызвал сбой: %s", errR)
-		}
-		return err
-	}
-
-	err = tx.Commit()
-
-	if err != nil {
-		return err
-	}
-	logger.LogSugar.Info("Создание таблиц завершено")
-	return nil
 }
