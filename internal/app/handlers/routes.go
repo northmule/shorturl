@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,26 +11,42 @@ import (
 	"github.com/northmule/shorturl/internal/app/workers"
 )
 
-// AppRoutes маршруты приложения.
-func AppRoutes(shortURLService *url.ShortURLService, stop <-chan struct{}) chi.Router {
+// Routes маршруты приложения.
+type Routes struct {
+	shortURLService *url.ShortURLService
+	storage         url.IStorage
+	sessionStorage  storage.Session
+}
+
+// NewRoutes Конструктор маршрутов.
+func NewRoutes(shortURLService *url.ShortURLService, storage url.IStorage, sessionStorage storage.Session) *Routes {
+	return &Routes{
+		shortURLService: shortURLService,
+		storage:         storage,
+		sessionStorage:  sessionStorage,
+	}
+}
+
+// Init создаёт маршруты.
+func (routes *Routes) Init(ctx context.Context, stop <-chan struct{}) chi.Router {
 	r := chi.NewRouter()
 
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("method not expect\n"))
 	})
-	sessionStorage := storage.NewSessionStorage()
-	checkAuth := middlewarehandler.NewCheckAuth(shortURLService.Storage, &sessionStorage)
+
+	checkAuth := middlewarehandler.NewCheckAuth(routes.storage, routes.sessionStorage)
 
 	r.Use(middlewarehandler.MiddlewareLogger)
 	r.Use(middlewarehandler.MiddlewareGzipCompressor)
 
-	shortenerHandler := NewShortenerHandler(shortURLService, shortURLService.Storage)
-	redirectHandler := NewRedirectHandler(shortURLService)
-	pingHandler := NewPingHandler(shortURLService.Storage)
+	shortenerHandler := NewShortenerHandler(routes.shortURLService, routes.storage)
+	redirectHandler := NewRedirectHandler(routes.shortURLService)
+	pingHandler := NewPingHandler(routes.storage)
 
-	worker := workers.NewWorker(shortURLService.Storage, stop)
-	userUrlsHandler := NewUserUrlsHandler(shortURLService.Storage, &sessionStorage, worker)
+	worker := workers.NewWorker(routes.storage, stop)
+	userUrlsHandler := NewUserUrlsHandler(routes.storage, routes.sessionStorage, worker)
 
 	r.With(
 		checkAuth.AuthEveryone,

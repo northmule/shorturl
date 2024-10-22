@@ -19,11 +19,11 @@ import (
 // CheckAuth структура.
 type CheckAuth struct {
 	storage url.IStorage
-	session *storage.Session
+	session storage.Session
 }
 
 // NewCheckAuth конструктор структуры.
-func NewCheckAuth(storage url.IStorage, session *storage.Session) *CheckAuth {
+func NewCheckAuth(storage url.IStorage, session storage.Session) *CheckAuth {
 	return &CheckAuth{
 		storage: storage,
 		session: session,

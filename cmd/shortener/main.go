@@ -46,10 +46,10 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
+	sessionStorage := appStorage.NewSessionStorage()
 	shortURLService := url.NewShortURLService(storage)
 	stop := make(chan struct{})
-	routes := handlers.AppRoutes(shortURLService, stop)
+	routes := handlers.NewRoutes(shortURLService, storage, sessionStorage).Init(ctx, stop)
 
 	if cfg.PprofEnabled {
 		routes.Mount("/debug", middleware.Profiler())

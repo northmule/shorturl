@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,9 @@ func TestRedirectHandler(t *testing.T) {
 	_ = logger.NewLogger("fatal")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
-	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage()).Init(ctx, stop))
 
 	defer ts.Close()
 
@@ -100,8 +103,11 @@ func TestRedirectHandler(t *testing.T) {
 func BenchmarkRedirectHandler(b *testing.B) {
 	_ = logger.NewLogger("fatal")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	sessionStorage := storage.NewSessionStorage()
 	stop := make(chan struct{})
-	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), sessionStorage).Init(ctx, stop))
 	// Отключить переход по ссылке при положительном ответе сервиса
 	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		errorRedirect := errors.New("HTTP redirect blocked")

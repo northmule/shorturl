@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,11 @@ var stop = make(chan struct{})
 
 func Example() {
 	_ = logger.NewLogger("fatal")
-	ts := httptest.NewServer(handlers.AppRoutes(shortURLService, stop))
+	memoryStorage := storage.NewMemoryStorage()
+	sessionStorage := storage.NewSessionStorage()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ts := httptest.NewServer(handlers.NewRoutes(shortURLService, memoryStorage, sessionStorage).Init(ctx, stop))
 
 	request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten/batch", bytes.NewBufferString(`[{"correlation_id":"1","original_url":"http://ya.ru"},{"correlation_id":"2","original_url":"http://ya.ru/2"},{"correlation_id":"3","original_url":"http://ya.ru/3"},{"correlation_id":"4","original_url":"http://ya.ru/4"}]`))
 	if err != nil {

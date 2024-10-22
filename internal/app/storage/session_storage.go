@@ -9,7 +9,7 @@ type SessionStorage struct {
 }
 
 // NewSessionStorage конструктор.
-func NewSessionStorage() Session {
+func NewSessionStorage() *SessionStorage {
 	return &SessionStorage{
 		Values: make(map[string]string, 100),
 	}

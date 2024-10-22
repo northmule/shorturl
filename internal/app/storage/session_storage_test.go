@@ -11,11 +11,11 @@ func TestAdd(t *testing.T) {
 
 	ss.Add(key, value)
 
-	if _, ok := ss.(*SessionStorage).Values[key]; !ok {
+	if _, ok := ss.Values[key]; !ok {
 		t.Errorf("Expected key %s to be in Values map", key)
 	}
-	if ss.(*SessionStorage).Values[key] != value {
-		t.Errorf("Expected value %s for key %s, but got %s", value, key, ss.(*SessionStorage).Values[key])
+	if ss.Values[key] != value {
+		t.Errorf("Expected value %s for key %s, but got %s", value, key, ss.Values[key])
 	}
 }
 

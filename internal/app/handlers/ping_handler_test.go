@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -128,7 +129,10 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			shortURLService := url.NewShortURLService(tt.storage)
 			stop := make(chan struct{})
-			ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+			sessionStorage := storage.NewSessionStorage()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			ts := httptest.NewServer(NewRoutes(shortURLService, tt.storage, sessionStorage).Init(ctx, stop))
 			defer ts.Close()
 
 			request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)
@@ -158,10 +162,12 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 	t.Run("Возврат_ошибки_подключения", func(t *testing.T) {
 		mockStorage := new(MockPostgresStorageBad)
 		mockStorage.On("Ping").Return(errors.New("bad test request"))
-
+		sessionStorage := storage.NewSessionStorage()
 		shortURLService := url.NewShortURLService(mockStorage)
 		stop := make(chan struct{})
-		ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		ts := httptest.NewServer(NewRoutes(shortURLService, mockStorage, sessionStorage).Init(ctx, stop))
 		defer ts.Close()
 
 		request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)
