@@ -14,7 +14,7 @@ import (
 type demoData []models.URL
 
 func TestFileStorage_restoreStorageData(t *testing.T) {
-	_ = logger.NewLogger("fatal")
+	_, _ = logger.NewLogger("fatal")
 
 	t.Run("првоерка_восстановления_значений_из_файла", func(t *testing.T) {
 		demoURLs := demoData{

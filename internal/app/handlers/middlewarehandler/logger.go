@@ -23,6 +23,7 @@ type ResponseWriterWrapper struct {
 	loggingData    *loggingData
 }
 
+// NewResponseWriterWrapper deprecated
 // NewResponseWriterWrapper конструктор логгера.
 func NewResponseWriterWrapper(rw http.ResponseWriter, request http.Request) *ResponseWriterWrapper {
 	return &ResponseWriterWrapper{

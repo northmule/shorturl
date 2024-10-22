@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/northmule/shorturl/internal/app/handlers/middlewarehandler"
+	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/workers"
@@ -38,7 +40,7 @@ func (routes *Routes) Init(ctx context.Context, stop <-chan struct{}) chi.Router
 
 	checkAuth := middlewarehandler.NewCheckAuth(routes.storage, routes.sessionStorage)
 
-	r.Use(middlewarehandler.MiddlewareLogger)
+	r.Use(middleware.RequestLogger(logger.LogSugar))
 	r.Use(middlewarehandler.MiddlewareGzipCompressor)
 
 	shortenerHandler := NewShortenerHandler(routes.shortURLService, routes.storage)

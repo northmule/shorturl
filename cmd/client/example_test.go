@@ -17,7 +17,7 @@ var shortURLService = url.NewShortURLService(storage.NewMemoryStorage())
 var stop = make(chan struct{})
 
 func Example() {
-	_ = logger.NewLogger("fatal")
+	_, _ = logger.NewLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	sessionStorage := storage.NewSessionStorage()
 	ctx, cancel := context.WithCancel(context.Background())

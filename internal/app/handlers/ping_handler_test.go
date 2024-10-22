@@ -89,7 +89,7 @@ func (m *MockPostgresStorageBad) SoftDeletedShortURL(userUUID string, shortURL .
 }
 
 func TestPingHandler_CheckStorageConnect(t *testing.T) {
-	_ = logger.NewLogger("fatal")
+	_, _ = logger.NewLogger("fatal")
 
 	file, err := os.CreateTemp("/tmp", "TestFileStorage_Add_*.json")
 	if err != nil {

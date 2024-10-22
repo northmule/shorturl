@@ -19,7 +19,7 @@ import (
 
 // TestShortenerHandler тест обработчика для декодирования ссылки
 func TestShortenerHandler(t *testing.T) {
-	_ = logger.NewLogger("info")
+	_, _ = logger.NewLogger("info")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())
@@ -217,7 +217,7 @@ func TestShortenerJsonHandler(t *testing.T) {
 }
 
 func TestGzipCompression(t *testing.T) {
-	_ = logger.NewLogger("info")
+	_, _ = logger.NewLogger("info")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())
@@ -338,7 +338,7 @@ func TestGzipCompression(t *testing.T) {
 }
 
 func BenchmarkShortenerHandler(b *testing.B) {
-	_ = logger.NewLogger("fatal")
+	_, _ = logger.NewLogger("fatal")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())
@@ -364,7 +364,7 @@ func BenchmarkShortenerHandler(b *testing.B) {
 }
 
 func BenchmarkShortenerJSONHandler(b *testing.B) {
-	_ = logger.NewLogger("fatal")
+	_, _ = logger.NewLogger("fatal")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())
@@ -390,7 +390,7 @@ func BenchmarkShortenerJSONHandler(b *testing.B) {
 }
 
 func BenchmarkShortenerBatch(b *testing.B) {
-	_ = logger.NewLogger("fatal")
+	_, _ = logger.NewLogger("fatal")
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())

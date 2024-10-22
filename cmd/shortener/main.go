@@ -34,7 +34,7 @@ func main() {
 
 // run преднастройка
 func run(ctx context.Context) error {
-	err := logger.NewLogger("info")
+	_, err := logger.NewLogger("info")
 	if err != nil {
 		return err
 	}

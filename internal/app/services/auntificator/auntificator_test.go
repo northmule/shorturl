@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetUserToken(t *testing.T) {
-	_ = logger.NewLogger("info")
+	_, _ = logger.NewLogger("info")
 
 	// Test cases
 	testCases := []struct {
@@ -47,7 +47,7 @@ func TestGetUserToken(t *testing.T) {
 }
 
 func TestGenerateToken(t *testing.T) {
-	_ = logger.NewLogger("info")
+	_, _ = logger.NewLogger("info")
 	userUUID := "user123"
 	exp := time.Hour * 600
 	secretKey := "super_secret_key"
@@ -65,7 +65,7 @@ func TestGenerateToken(t *testing.T) {
 }
 
 func TestValidateToken(t *testing.T) {
-	_ = logger.NewLogger("info")
+	_, _ = logger.NewLogger("info")
 	userUUID := "user123"
 
 	// Test cases
@@ -108,7 +108,7 @@ func TestValidateToken(t *testing.T) {
 }
 
 func BenchmarkGenerateToken(b *testing.B) {
-	_ = logger.NewLogger("fatal")
+	_, _ = logger.NewLogger("fatal")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		GenerateToken("111111-22222-33333-44444", HMACTokenExp, HMACSecretKey)
@@ -116,7 +116,7 @@ func BenchmarkGenerateToken(b *testing.B) {
 }
 
 func BenchmarkValidateToken(b *testing.B) {
-	_ = logger.NewLogger("fatal")
+	_, _ = logger.NewLogger("fatal")
 	userUUID := "user123"
 	token, _ := GenerateToken(userUUID, HMACTokenExp, HMACSecretKey)
 	b.ResetTimer()
