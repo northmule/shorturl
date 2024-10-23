@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +10,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/workers"
 )
 
 var shortURLService = url.NewShortURLService(storage.NewMemoryStorage())
@@ -20,9 +20,7 @@ func Example() {
 	_, _ = logger.NewLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	sessionStorage := storage.NewSessionStorage()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(handlers.NewRoutes(shortURLService, memoryStorage, sessionStorage).Init(ctx, stop))
+	ts := httptest.NewServer(handlers.NewRoutes(shortURLService, memoryStorage, sessionStorage, workers.NewWorker(memoryStorage, stop)).Init())
 
 	request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten/batch", bytes.NewBufferString(`[{"correlation_id":"1","original_url":"http://ya.ru"},{"correlation_id":"2","original_url":"http://ya.ru/2"},{"correlation_id":"3","original_url":"http://ya.ru/3"},{"correlation_id":"4","original_url":"http://ya.ru/4"}]`))
 	if err != nil {

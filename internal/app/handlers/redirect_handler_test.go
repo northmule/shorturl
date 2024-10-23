@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -11,16 +10,19 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/workers"
 )
 
 // TestRedirectHandler тест обработчика для декодирования ссылки
 func TestRedirectHandler(t *testing.T) {
 	_, _ = logger.NewLogger("fatal")
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	memoryStorage := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(memoryStorage)
 	stop := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage()).Init(ctx, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 
 	defer ts.Close()
 
@@ -102,12 +104,14 @@ func TestRedirectHandler(t *testing.T) {
 
 func BenchmarkRedirectHandler(b *testing.B) {
 	_, _ = logger.NewLogger("fatal")
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	memoryStorage := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(memoryStorage)
 	sessionStorage := storage.NewSessionStorage()
 	stop := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), sessionStorage).Init(ctx, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), sessionStorage, workers.NewWorker(memoryStorage, stop)).Init())
 	// Отключить переход по ссылке при положительном ответе сервиса
 	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		errorRedirect := errors.New("HTTP redirect blocked")

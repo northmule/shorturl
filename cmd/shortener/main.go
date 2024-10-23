@@ -18,6 +18,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/workers"
 )
 
 // @Title Shortener API
@@ -50,7 +51,8 @@ func run(ctx context.Context) error {
 	sessionStorage := appStorage.NewSessionStorage()
 	shortURLService := url.NewShortURLService(storage)
 	stop := make(chan struct{})
-	routes := handlers.NewRoutes(shortURLService, storage, sessionStorage).Init(ctx, stop)
+	worker := workers.NewWorker(storage, stop)
+	routes := handlers.NewRoutes(shortURLService, storage, sessionStorage, worker).Init()
 
 	if cfg.PprofEnabled {
 		routes.Mount("/debug", middleware.Profiler())

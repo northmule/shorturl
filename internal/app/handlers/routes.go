@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -18,19 +17,21 @@ type Routes struct {
 	shortURLService *url.ShortURLService
 	storage         url.IStorage
 	sessionStorage  storage.Session
+	worker          *workers.Worker
 }
 
 // NewRoutes Конструктор маршрутов.
-func NewRoutes(shortURLService *url.ShortURLService, storage url.IStorage, sessionStorage storage.Session) *Routes {
+func NewRoutes(shortURLService *url.ShortURLService, storage url.IStorage, sessionStorage storage.Session, worker *workers.Worker) *Routes {
 	return &Routes{
 		shortURLService: shortURLService,
 		storage:         storage,
 		sessionStorage:  sessionStorage,
+		worker:          worker,
 	}
 }
 
 // Init создаёт маршруты.
-func (routes *Routes) Init(ctx context.Context, stop <-chan struct{}) chi.Router {
+func (routes *Routes) Init() chi.Router {
 	r := chi.NewRouter()
 
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
@@ -47,8 +48,7 @@ func (routes *Routes) Init(ctx context.Context, stop <-chan struct{}) chi.Router
 	redirectHandler := NewRedirectHandler(routes.shortURLService)
 	pingHandler := NewPingHandler(routes.storage)
 
-	worker := workers.NewWorker(routes.storage, stop)
-	userUrlsHandler := NewUserUrlsHandler(routes.storage, routes.sessionStorage, worker)
+	userUrlsHandler := NewUserUrlsHandler(routes.storage, routes.sessionStorage, routes.worker)
 
 	r.With(
 		checkAuth.AuthEveryone,

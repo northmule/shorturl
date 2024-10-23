@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
+	"github.com/northmule/shorturl/internal/app/workers"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -130,9 +130,10 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 			shortURLService := url.NewShortURLService(tt.storage)
 			stop := make(chan struct{})
 			sessionStorage := storage.NewSessionStorage()
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			ts := httptest.NewServer(NewRoutes(shortURLService, tt.storage, sessionStorage).Init(ctx, stop))
+			defer func() {
+				stop <- struct{}{}
+			}()
+			ts := httptest.NewServer(NewRoutes(shortURLService, tt.storage, sessionStorage, workers.NewWorker(tt.storage, stop)).Init())
 			defer ts.Close()
 
 			request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)
@@ -165,9 +166,10 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 		sessionStorage := storage.NewSessionStorage()
 		shortURLService := url.NewShortURLService(mockStorage)
 		stop := make(chan struct{})
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		ts := httptest.NewServer(NewRoutes(shortURLService, mockStorage, sessionStorage).Init(ctx, stop))
+		defer func() {
+			stop <- struct{}{}
+		}()
+		ts := httptest.NewServer(NewRoutes(shortURLService, mockStorage, sessionStorage, workers.NewWorker(mockStorage, stop)).Init())
 		defer ts.Close()
 
 		request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)

@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -15,16 +14,19 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/workers"
 )
 
 // TestShortenerHandler тест обработчика для декодирования ссылки
 func TestShortenerHandler(t *testing.T) {
 	_, _ = logger.NewLogger("info")
+	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage()).Init(ctx, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 
 	type want struct {
@@ -104,11 +106,13 @@ func TestShortenerHandler(t *testing.T) {
 }
 
 func TestMethodNotAllowed(t *testing.T) {
+	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage()).Init(ctx, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 
 	request, err := http.NewRequest(http.MethodGet, ts.URL, nil)
@@ -127,11 +131,13 @@ func TestMethodNotAllowed(t *testing.T) {
 }
 
 func TestShortenerJsonHandler(t *testing.T) {
+	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage()).Init(ctx, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 
 	type want struct {
@@ -218,11 +224,13 @@ func TestShortenerJsonHandler(t *testing.T) {
 
 func TestGzipCompression(t *testing.T) {
 	_, _ = logger.NewLogger("info")
+	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage()).Init(ctx, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 
 	requestBody := `{
@@ -339,11 +347,13 @@ func TestGzipCompression(t *testing.T) {
 
 func BenchmarkShortenerHandler(b *testing.B) {
 	_, _ = logger.NewLogger("fatal")
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	memoryStorage := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(memoryStorage)
 	stop := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage()).Init(ctx, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -365,11 +375,13 @@ func BenchmarkShortenerHandler(b *testing.B) {
 
 func BenchmarkShortenerJSONHandler(b *testing.B) {
 	_, _ = logger.NewLogger("fatal")
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	memoryStorage := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(memoryStorage)
 	stop := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage()).Init(ctx, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -391,11 +403,13 @@ func BenchmarkShortenerJSONHandler(b *testing.B) {
 
 func BenchmarkShortenerBatch(b *testing.B) {
 	_, _ = logger.NewLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage()).Init(ctx, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
