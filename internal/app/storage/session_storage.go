@@ -15,8 +15,8 @@ func NewSessionStorage() *SessionStorage {
 	}
 }
 
-// Session метод работы с хранилищем.
-type Session interface {
+// ISession метод работы с хранилищем.
+type ISession interface {
 	// Add добавить новую запись.
 	Add(key string, value string)
 	// Get получить запись по ключу.

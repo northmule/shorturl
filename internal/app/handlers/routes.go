@@ -16,12 +16,12 @@ import (
 type Routes struct {
 	shortURLService *url.ShortURLService
 	storage         url.IStorage
-	sessionStorage  storage.Session
+	sessionStorage  storage.ISession
 	worker          *workers.Worker
 }
 
 // NewRoutes Конструктор маршрутов.
-func NewRoutes(shortURLService *url.ShortURLService, storage url.IStorage, sessionStorage storage.Session, worker *workers.Worker) *Routes {
+func NewRoutes(shortURLService *url.ShortURLService, storage url.IStorage, sessionStorage storage.ISession, worker *workers.Worker) *Routes {
 	return &Routes{
 		shortURLService: shortURLService,
 		storage:         storage,
