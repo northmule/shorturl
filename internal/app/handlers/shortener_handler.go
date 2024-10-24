@@ -23,11 +23,6 @@ type ShortenerHandler struct {
 	setter  Setter
 }
 
-// IShortenerHandler интерфейс сокращателя.
-type IShortenerHandler interface {
-	ShortenerHandler(res http.ResponseWriter, req *http.Request)
-}
-
 // NewShortenerHandler конструктор.
 func NewShortenerHandler(urlService *url.ShortURLService, storage url.IStorage) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{

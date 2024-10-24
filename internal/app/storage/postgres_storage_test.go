@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 
 	"github.com/northmule/shorturl/internal/app/logger"
@@ -35,7 +34,7 @@ func TestPostgresStorage_Add(t *testing.T) {
 		defer func() {
 			// вызов Next в Add
 			if r := recover(); r != nil {
-				fmt.Println("Recovered in f", r)
+				logger.LogSugar.Infof("Recovered in %v", r)
 			}
 		}()
 		storage.Add(models.URL{})
@@ -55,7 +54,7 @@ func TestPostgresStorage_FindByShortURL(t *testing.T) {
 		defer func() {
 			// вызов Next в FindByShortURL
 			if r := recover(); r != nil {
-				fmt.Println("Recovered in f", r)
+				logger.LogSugar.Infof("Recovered in %v", r)
 			}
 		}()
 		storage.FindByShortURL("")
@@ -74,7 +73,7 @@ func TestPostgresStorage_FindByURL(t *testing.T) {
 		defer func() {
 			// вызов Next в FindByURL
 			if r := recover(); r != nil {
-				fmt.Println("Recovered in f", r)
+				logger.LogSugar.Infof("Recovered in %v", r)
 			}
 		}()
 		storage.FindByURL("")

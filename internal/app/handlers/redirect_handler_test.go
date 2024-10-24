@@ -10,6 +10,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/storage/models"
 	"github.com/northmule/shorturl/internal/app/workers"
 )
 
@@ -118,15 +119,38 @@ func BenchmarkRedirectHandler(b *testing.B) {
 		return errorRedirect
 	}
 	defer ts.Close()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		request, err := http.NewRequest(http.MethodGet, ts.URL+"/e98192e19505472476a49f10388428ab", nil)
-		if err != nil {
-			b.Error(err)
+
+	b.Run("короткая_ссылка_не_существует", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			request, err := http.NewRequest(http.MethodGet, ts.URL+"/e98192e19505472476a49f10388428ab", nil)
+			if err != nil {
+				b.Error(err)
+			}
+			b.StartTimer()
+			response, _ := ts.Client().Do(request)
+			response.Body.Close()
 		}
-		b.StartTimer()
-		response, _ := ts.Client().Do(request)
-		response.Body.Close()
-	}
+	})
+
+	b.Run("короткая_ссылка_существует", func(b *testing.B) {
+		shortURL := "e98192e19505472476a49f10388428ab"
+		memoryStorage.Add(models.URL{
+			ShortURL: shortURL,
+			URL:      "https://ya.ru/123",
+		})
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			request, err := http.NewRequest(http.MethodGet, ts.URL+"/"+shortURL, nil)
+			if err != nil {
+				b.Error(err)
+			}
+			b.StartTimer()
+			response, _ := ts.Client().Do(request)
+			response.Body.Close()
+		}
+	})
 }

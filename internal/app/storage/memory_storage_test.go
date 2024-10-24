@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -126,4 +127,116 @@ func TestMemoryStorage__FindUrlsByUserID(t *testing.T) {
 	if !isExist {
 		t.Errorf("FindUrlsByUserID() userURLs = %v, want %v", 0, 1)
 	}
+}
+
+func BenchmarkMemoryStorage(b *testing.B) {
+	_ = logger.InitLogger("fatal")
+
+	b.Run("поиск_ссылок_созданных_пользователем", func(b *testing.B) {
+		storage := NewMemoryStorage()
+		userUUID := "1111-2222-33333-44444"
+		_, _ = storage.CreateUser(models.User{
+			Name:     "name",
+			Login:    "Login",
+			Password: "Password",
+			UUID:     userUUID,
+		})
+		urlID, _ := storage.Add(models.URL{
+			ShortURL: "qqwww",
+			URL:      "https://google.com",
+		})
+		_ = storage.LikeURLToUser(urlID, userUUID)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			userURLs, _ := storage.FindUrlsByUserID(userUUID)
+			if len(*userURLs) == 0 {
+				b.Errorf("URL-s не найдены")
+			}
+		}
+	})
+
+	b.Run("поиск_пользователя_по_логину_и_паролю", func(b *testing.B) {
+		storage := NewMemoryStorage()
+		userUUID := "1111-2222-33333-44444"
+		_, _ = storage.CreateUser(models.User{
+			Name:     "name",
+			Login:    "Login",
+			Password: "Password",
+			UUID:     userUUID,
+		})
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			user, _ := storage.FindUserByLoginAndPasswordHash("Login", "Password")
+			if user.Login != "Login" {
+				b.Errorf("Логин не совпадает")
+			}
+		}
+	})
+
+	b.Run("создание_нового_пользователя", func(b *testing.B) {
+		storage := NewMemoryStorage()
+		b.ResetTimer()
+		testID := int64(0)
+		for i := 0; i < b.N; i++ {
+			userID, _ := storage.CreateUser(models.User{
+				Name:     "name",
+				Login:    "Login",
+				Password: "Password",
+				UUID:     "1111-2222-33333-44444",
+			})
+			testID++
+			if userID != testID {
+				b.Errorf("ID не совпадаеют")
+			}
+		}
+	})
+
+	b.Run("поиск_по_url", func(b *testing.B) {
+		storage := NewMemoryStorage()
+		storage.Add(models.URL{
+			ShortURL: "111fghfhfgh1",
+			URL:      "https://google.com",
+		})
+
+		for i := 1; i < 100000; i++ {
+			storage.Add(models.URL{
+				ShortURL: "asdfsfadf",
+				URL:      "https://habr.ru/news_" + string(rune(i)),
+			})
+		}
+
+		storage.Add(models.URL{
+			ShortURL: "2222vbxcbcvbc2",
+			URL:      "https://ya.ru",
+		})
+		var url *models.URL
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			url, _ = storage.FindByURL("https://google.com")
+			if url == nil {
+				b.Errorf("URL не найден")
+			}
+			url, _ = storage.FindByURL("https://ya.ru")
+			if url == nil {
+				b.Errorf("URL не найден")
+			}
+		}
+	})
+
+	b.Run("вставка_нескольких_значений", func(b *testing.B) {
+		storage := NewMemoryStorage()
+
+		urls := make([]models.URL, 1000)
+		for i := 0; i < 1000; i++ {
+			urls[i] = models.URL{
+				ShortURL: "asdfsfadf",
+				URL:      "https://habr.ru/news_" + strconv.Itoa(i),
+			}
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			storage.MultiAdd(urls)
+		}
+	})
 }

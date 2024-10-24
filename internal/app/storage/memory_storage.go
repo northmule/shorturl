@@ -64,8 +64,8 @@ func (s *MemoryStorage) CreateUser(user models.User) (int64, error) {
 
 // SoftDeletedShortURL Отметка об удалении ссылки.
 func (s *MemoryStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
-	for _, shortURL := range shortURL {
-		s.deletedURLs[shortURL] = userUUID
+	for _, value := range shortURL {
+		s.deletedURLs[value] = userUUID
 	}
 	return nil
 }
