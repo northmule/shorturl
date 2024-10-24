@@ -81,11 +81,13 @@ func run(ctx context.Context) error {
 
 	logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)
 	err = httpServer.ListenAndServe()
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+
+	if err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			logger.LogSugar.Info("Сервер остановлен")
+			return nil
+		}
 		return err
-	}
-	if errors.Is(err, http.ErrServerClosed) {
-		logger.LogSugar.Info("Сервер остановлен")
 	}
 
 	return nil
