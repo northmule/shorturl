@@ -3,17 +3,18 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/storage/models"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
 type demoData []models.URL
 
 func TestFileStorage_restoreStorageData(t *testing.T) {
-	_ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 
 	t.Run("првоерка_восстановления_значений_из_файла", func(t *testing.T) {
 		demoURLs := demoData{
@@ -78,6 +79,7 @@ func TestFileStorage_restoreStorageData(t *testing.T) {
 }
 
 func TestFileStorage_Add(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 
 	t.Run("Добавление_значения", func(t *testing.T) {
 		file, err := os.CreateTemp("/tmp", "TestFileStorage_Add_*.json")
@@ -119,6 +121,7 @@ func TestFileStorage_Add(t *testing.T) {
 	})
 
 	t.Run("Запись_множества_значений_с_проверкой_наличия_одного_значения", func(t *testing.T) {
+		_ = logger.InitLogger("fatal")
 		file, err := os.CreateTemp("/tmp", "TestFileStorage_Add_*.json")
 		if err != nil {
 			t.Fatal(err)

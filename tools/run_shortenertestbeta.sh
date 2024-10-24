@@ -30,3 +30,8 @@ shortenertestbeta -test.v -test.run=^TestIteration13$ -binary-path=$SHORTURL_PRO
 ## Спринт 4
 shortenertestbeta -test.v -test.run=^TestIteration14$ -binary-path=$SHORTURL_PROJECT_PATH/cmd/shortener/shortener -database-dsn='postgres://postgres:123@localhost:5456/shorturl?sslmode=disable'
 shortenertestbeta -test.v -test.run=^TestIteration15$ -binary-path=$SHORTURL_PROJECT_PATH/cmd/shortener/shortener -database-dsn='postgres://postgres:123@localhost:5456/shorturl?sslmode=disable'
+
+## Спринт 7
+shortenertestbeta -test.v -test.run=^TestIteration16$ -source-path=$SHORTURL_PROJECT_PATH
+shortenertestbeta -test.v -test.run=^TestIteration17$ -source-path=$SHORTURL_PROJECT_PATH
+shortenertestbeta -test.v -test.run=^TestIteration18$ -source-path=$SHORTURL_PROJECT_PATH

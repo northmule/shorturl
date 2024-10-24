@@ -1,19 +1,21 @@
 package middlewarehandler
 
 import (
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/compressor"
 	"net/http"
 	"strings"
+
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/compressor"
 )
 
-// Ожидаемые типы
+// Ожидаемые типы.
 var expectedContentTypes = map[string]bool{
 	"application/json":   true,
 	"text/html":          true,
 	"application/x-gzip": true,
 }
 
+// MiddlewareGzipCompressor промежуточно по для сжатия.
 func MiddlewareGzipCompressor(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 

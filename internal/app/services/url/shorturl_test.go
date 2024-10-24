@@ -2,9 +2,12 @@ package url
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+
+	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"testing"
 )
 
 // storageMock структура хранилища
@@ -64,13 +67,14 @@ func (s *storageMock) SoftDeletedShortURL(userUUID string, shortURL ...string) e
 }
 
 func TestShortURLService_DecodeURL(t *testing.T) {
-	storageMock := &storageMock{
+	_ = logger.InitLogger("fatal")
+	storageMockInstance := &storageMock{
 		db: &map[string]models.URL{},
 	}
-	NewShortURLService(storageMock)
+	NewShortURLService(storageMockInstance)
 
 	type fields struct {
-		Storage      StorageInterface
+		Storage      IStorage
 		shortURLData ShortURLData
 	}
 	type args struct {
@@ -86,7 +90,7 @@ func TestShortURLService_DecodeURL(t *testing.T) {
 		{
 			name: "#1_передать_url_получить_короткую_строку",
 			fields: fields{
-				Storage:      storageMock,
+				Storage:      storageMockInstance,
 				shortURLData: ShortURLData{},
 			},
 			args: args{
@@ -125,18 +129,19 @@ func TestShortURLService_DecodeURL(t *testing.T) {
 }
 
 func TestShortURLService_EncodeShortURL(t *testing.T) {
-	storageMock := &storageMock{
+	_ = logger.InitLogger("fatal")
+	storageMockInstance := &storageMock{
 		db: &map[string]models.URL{},
 	}
-	NewShortURLService(storageMock)
+	NewShortURLService(storageMockInstance)
 
-	_, _ = storageMock.Add(models.URL{
+	_, _ = storageMockInstance.Add(models.URL{
 		ShortURL: "123",
 		URL:      "https://example.ru",
 	})
 
 	type fields struct {
-		Storage      StorageInterface
+		Storage      IStorage
 		shortURLData ShortURLData
 	}
 	type args struct {
@@ -152,7 +157,7 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 		{
 			name: "#1_передать_короткую_ссылку_получить_url",
 			fields: fields{
-				Storage:      storageMock,
+				Storage:      storageMockInstance,
 				shortURLData: ShortURLData{},
 			},
 			args: args{
@@ -184,17 +189,18 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 }
 
 func TestShortURLService_DecodeURLs(t *testing.T) {
-	storageMock := storage.NewMemoryStorage()
+	_ = logger.InitLogger("fatal")
+	storageMockInstance := storage.NewMemoryStorage()
 
 	tests := []struct {
 		name    string
-		Storage StorageInterface
+		Storage IStorage
 		urls    []string
 		wantErr bool
 	}{
 		{
 			name:    "#1_много_url",
-			Storage: storageMock,
+			Storage: storageMockInstance,
 			urls: []string{
 				"https://habr.com/ru/feed/",
 				"https://habr.com/ru/companies/gazprombank/articles/832810/",
@@ -209,13 +215,13 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 		},
 		{
 			name:    "#2_пустой_список",
-			Storage: storageMock,
+			Storage: storageMockInstance,
 			urls:    []string{},
 			wantErr: false,
 		},
 		{
 			name:    "#3_дубли",
-			Storage: storageMock,
+			Storage: storageMockInstance,
 			urls: []string{
 				"https://habr.com/ru/feed/",
 				"https://habr.com/ru/feed/",
@@ -242,5 +248,28 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func BenchmarkNewRandomString(b *testing.B) {
+	_ = logger.InitLogger("fatal")
+	for i := 0; i < b.N; i++ {
+		newRandomString(ShortURLDefaultSize)
+	}
+}
+
+func BenchmarkDecodeURLs(b *testing.B) {
+	_ = logger.InitLogger("fatal")
+	storageMemoryMock := storage.NewMemoryStorage()
+	service := &ShortURLService{
+		Storage:      storageMemoryMock,
+		shortURLData: ShortURLData{},
+	}
+	testData := strings.Repeat("A ", 100)
+	urls := strings.Split(testData, " ")
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = service.DecodeURLs(urls)
 	}
 }

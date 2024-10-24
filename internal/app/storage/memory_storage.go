@@ -2,19 +2,27 @@ package storage
 
 import (
 	"fmt"
-	"github.com/northmule/shorturl/internal/app/storage/models"
 	"sync"
+
+	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
-// MemoryStorage структура хранилища
+// MemoryStorage структура хранилища в памяти.
 type MemoryStorage struct {
-	db          *map[string]models.URL
-	users       map[int]models.User
+	// ссылки (ключ короткая ссылка, значение полная)
+	db    *map[string]models.URL
+	users map[int]models.User
+	// удалённый url (ключ короткая ссылка, значение uuid пользователя)
 	deletedURLs map[string]string
+	// ссылки пользователя (ключ короткая ссылка, значение - uuid пользователя)
+	userURLs map[string]string
 	// Синхронизация конккуретного доступа
-	mx sync.RWMutex
+	mx            sync.RWMutex
+	lastIDForURL  uint
+	lastIDForUser int
 }
 
+// NewMemoryStorage конструктор хранилища.
 func NewMemoryStorage() *MemoryStorage {
 	databaseData := make(map[string]models.URL, 1000)
 	// Демо данные
@@ -28,50 +36,60 @@ func NewMemoryStorage() *MemoryStorage {
 		db:          &databaseData,
 		users:       make(map[int]models.User, 100),
 		deletedURLs: make(map[string]string, 100),
+		userURLs:    make(map[string]string, 100),
 	}
 
 	return &instance
 }
 
-// Add добавление нового значения
+// Add добавление нового значения.
 func (s *MemoryStorage) Add(url models.URL) (int64, error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	data := *s.db
+	s.lastIDForURL++
+	url.ID = s.lastIDForURL
 	data[url.ShortURL] = url
-	return 1, nil
+	return int64(url.ID), nil
 }
 
+// CreateUser создает пользователя.
 func (s *MemoryStorage) CreateUser(user models.User) (int64, error) {
+	s.lastIDForUser++
+	user.ID = s.lastIDForUser
 	s.users[user.ID] = user
 	return int64(user.ID), nil
 
 }
 
+// SoftDeletedShortURL Отметка об удалении ссылки.
 func (s *MemoryStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
-	for _, shortURL := range shortURL {
-		s.deletedURLs[shortURL] = userUUID
+	for _, value := range shortURL {
+		s.deletedURLs[value] = userUUID
 	}
 	return nil
 }
 
+// LikeURLToUser Связывание URL с пользователем.
 func (s *MemoryStorage) LikeURLToUser(urlID int64, userUUID string) error {
-	//todo
-	return nil
-}
-
-func (s *MemoryStorage) MultiAdd(urls []models.URL) error {
-	for _, url := range urls {
-		s.removeItemByURL(url.URL)
-		_, err := s.Add(url)
-		if err != nil {
-			return err
+	for shortURL, value := range *s.db {
+		if int64(value.ID) == urlID {
+			s.userURLs[shortURL] = userUUID
 		}
 	}
 	return nil
 }
 
-// FindByShortURL поиск по короткой ссылке
+// MultiAdd Вставка массива.
+func (s *MemoryStorage) MultiAdd(urls []models.URL) error {
+	for _, url := range urls {
+		s.removeItemByURL(url.URL)
+		_, _ = s.Add(url)
+	}
+	return nil
+}
+
+// FindByShortURL поиск по короткой ссылке.
 func (s *MemoryStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
@@ -83,8 +101,9 @@ func (s *MemoryStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	return nil, fmt.Errorf("the short link was not found")
 }
 
-// FindByURL поиск по URL
+// FindByURL поиск по URL.
 func (s *MemoryStorage) FindByURL(url string) (*models.URL, error) {
+	var urlModel models.URL
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 	for _, modelURL := range *s.db {
@@ -92,7 +111,7 @@ func (s *MemoryStorage) FindByURL(url string) (*models.URL, error) {
 			return &modelURL, nil
 		}
 	}
-	return nil, fmt.Errorf("the url link was not found")
+	return &urlModel, fmt.Errorf("the url link was not found")
 }
 
 func (s *MemoryStorage) removeItemByURL(url string) {
@@ -103,17 +122,31 @@ func (s *MemoryStorage) removeItemByURL(url string) {
 	}
 }
 
-func (s *MemoryStorage) GetAll() (*map[string]models.URL, error) {
-	return s.db, nil
-}
-
+// Ping проверка доступности.
 func (s *MemoryStorage) Ping() error {
 	return nil
 }
 
+// FindUserByLoginAndPasswordHash Поиск пользователя.
 func (s *MemoryStorage) FindUserByLoginAndPasswordHash(login string, password string) (*models.User, error) {
+	for _, value := range s.users {
+		if value.Login == login && value.Password == password {
+			return &value, nil
+		}
+	}
 	return nil, nil
 }
+
+// FindUrlsByUserID поиск URL-s.
 func (s *MemoryStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
-	return nil, nil
+	urls := make([]models.URL, 0, 100)
+	for shortURL, uuid := range s.userURLs {
+		if uuid != userUUID {
+			continue
+		}
+		if url, ok := (*s.db)[shortURL]; ok {
+			urls = append(urls, url)
+		}
+	}
+	return &urls, nil
 }
