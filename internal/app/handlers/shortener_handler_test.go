@@ -19,7 +19,7 @@ import (
 
 // TestShortenerHandler тест обработчика для декодирования ссылки
 func TestShortenerHandler(t *testing.T) {
-	_, _ = logger.NewLogger("info")
+	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
@@ -223,7 +223,7 @@ func TestShortenerJsonHandler(t *testing.T) {
 }
 
 func TestGzipCompression(t *testing.T) {
-	_, _ = logger.NewLogger("info")
+	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})
@@ -346,7 +346,7 @@ func TestGzipCompression(t *testing.T) {
 }
 
 func BenchmarkShortenerHandler(b *testing.B) {
-	_, _ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(memoryStorage)
 	stop := make(chan struct{})
@@ -374,7 +374,7 @@ func BenchmarkShortenerHandler(b *testing.B) {
 }
 
 func BenchmarkShortenerJSONHandler(b *testing.B) {
-	_, _ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(memoryStorage)
 	stop := make(chan struct{})
@@ -402,7 +402,7 @@ func BenchmarkShortenerJSONHandler(b *testing.B) {
 }
 
 func BenchmarkShortenerBatch(b *testing.B) {
-	_, _ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
 	stop := make(chan struct{})

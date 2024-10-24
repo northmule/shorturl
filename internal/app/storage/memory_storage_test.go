@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
 func TestMemoryStorage_StorageMethods(t *testing.T) {
-
+	_ = logger.InitLogger("fatal")
 	storage := NewMemoryStorage()
 
 	tests := []struct {
@@ -50,6 +51,7 @@ func TestMemoryStorage_StorageMethods(t *testing.T) {
 
 // TestMemoryStorage_concurrentAdd Не должен упасть с fatal error: concurrent map writes
 func TestMemoryStorage_concurrentAdd(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 	storage := NewMemoryStorage()
 
 	for i := 0; i < 200; i++ {
@@ -80,6 +82,7 @@ func TestMemoryStorage_CreateUser(t *testing.T) {
 }
 
 func TestMemoryStorage_FindUserByLoginAndPasswordHash(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 	storage := NewMemoryStorage()
 	newUser := models.User{
 		Name:     "name",
@@ -95,6 +98,7 @@ func TestMemoryStorage_FindUserByLoginAndPasswordHash(t *testing.T) {
 }
 
 func TestMemoryStorage__FindUrlsByUserID(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 	storage := NewMemoryStorage()
 	userUUID := "1111-2222-33333-44444"
 	_, _ = storage.CreateUser(models.User{

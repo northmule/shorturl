@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/northmule/shorturl/internal/app/logger"
 	mocks "github.com/northmule/shorturl/internal/app/storage/mock"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"go.uber.org/mock/gomock"
@@ -23,7 +24,7 @@ func (t *testResult) RowsAffected() (int64, error) {
 }
 
 func TestPostgresStorage_Add(t *testing.T) {
-
+	_ = logger.InitLogger("fatal")
 	t.Run("Добавление_нового_значения", func(t *testing.T) {
 		ctrl, _ := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()
@@ -43,6 +44,7 @@ func TestPostgresStorage_Add(t *testing.T) {
 }
 
 func TestPostgresStorage_FindByShortURL(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 	t.Run("Поиск_по_короткому_url", func(t *testing.T) {
 		ctrl, _ := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()
@@ -61,6 +63,7 @@ func TestPostgresStorage_FindByShortURL(t *testing.T) {
 }
 
 func TestPostgresStorage_FindByURL(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 	t.Run("Поиск_по_url", func(t *testing.T) {
 		ctrl, _ := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()
@@ -79,6 +82,7 @@ func TestPostgresStorage_FindByURL(t *testing.T) {
 }
 
 func TestPostgresStorage_Ping(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 	t.Run("Вызов_Ping", func(t *testing.T) {
 		ctrl, _ := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()

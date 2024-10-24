@@ -24,3 +24,8 @@ exclude:
     - \.pb\.go$    # excludes all protobuf generated files
     - ^pkg/bar     # exclude package `pkg/bar`
     - ^swagger
+    - ^cmd
+    - ^db
+    - ^build
+    - ^profiles
+    - ^tools

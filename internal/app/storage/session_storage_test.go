@@ -2,9 +2,12 @@ package storage
 
 import (
 	"testing"
+
+	"github.com/northmule/shorturl/internal/app/logger"
 )
 
 func TestAdd(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 	ss := NewSessionStorage()
 	key := "testKey"
 	value := "testValue"
@@ -20,6 +23,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 	ss := NewSessionStorage()
 	key := "testKey"
 	value := "testValue"
@@ -36,6 +40,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
+	_ = logger.InitLogger("fatal")
 	ss := NewSessionStorage()
 	key1 := "testKey1"
 	value1 := "testValue1"
@@ -58,11 +63,10 @@ func TestGetAll(t *testing.T) {
 }
 
 func BenchmarkAdd(b *testing.B) {
+	_ = logger.InitLogger("fatal")
 	ss := NewSessionStorage()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for j := 0; j < 1000; j++ {
-			ss.Add(string(rune(j+200)), "test_value")
-		}
+		ss.Add(string(rune(i+200)), "test_value")
 	}
 }

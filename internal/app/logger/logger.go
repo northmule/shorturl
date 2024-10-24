@@ -2,6 +2,7 @@ package logger
 
 import (
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -9,7 +10,10 @@ import (
 )
 
 // LogSugar Глобальный логгер.
-var LogSugar *Logger
+var (
+	LogSugar *Logger
+	once     sync.Once
+)
 
 // Logger Логгер для реализации в запросах
 type Logger struct {
@@ -21,20 +25,33 @@ type LogEntry struct {
 	*zap.SugaredLogger
 }
 
-// NewLogger конструктор.
-func NewLogger(level string) (*Logger, error) {
-	lvl, err := zap.ParseAtomicLevel(level)
-	if err != nil {
-		return nil, err
+// InitLogger конструктор.
+func InitLogger(level string) error {
+	var isError bool
+	var err error
+
+	once.Do(
+		func() {
+			lvl, err := zap.ParseAtomicLevel(level)
+			if err != nil {
+				isError = true
+				return
+			}
+			cfg := zap.NewDevelopmentConfig()
+			cfg.Level = lvl
+			appLogger, err := cfg.Build()
+			if err != nil {
+				isError = true
+				return
+			}
+			LogSugar = &Logger{appLogger.Sugar()}
+		})
+
+	if isError {
+		return err
 	}
-	cfg := zap.NewDevelopmentConfig()
-	cfg.Level = lvl
-	appLogger, err := cfg.Build()
-	if err != nil {
-		return nil, err
-	}
-	LogSugar = &Logger{appLogger.Sugar()}
-	return LogSugar, nil
+
+	return nil
 }
 
 // NewLogEntry Конструктор

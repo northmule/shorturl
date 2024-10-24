@@ -17,7 +17,7 @@ var shortURLService = url.NewShortURLService(storage.NewMemoryStorage())
 var stop = make(chan struct{})
 
 func Example() {
-	_, _ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	sessionStorage := storage.NewSessionStorage()
 	ts := httptest.NewServer(handlers.NewRoutes(shortURLService, memoryStorage, sessionStorage, workers.NewWorker(memoryStorage, stop)).Init())

@@ -24,7 +24,7 @@ func (m *MockFinder) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 }
 
 func TestView(t *testing.T) {
-	_, _ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 	mockFinder := new(MockFinder)
 	userUUID := "user123"
 	userURLs := &[]models.URL{
@@ -59,7 +59,7 @@ func TestView(t *testing.T) {
 }
 
 func BenchmarkView(b *testing.B) {
-	_, _ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 	mockFinder := new(MockFinder)
 	userUUID := "user123"
 	userURLs := &[]models.URL{

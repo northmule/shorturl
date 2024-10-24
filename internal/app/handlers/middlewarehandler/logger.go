@@ -16,6 +16,7 @@ type loggingData struct {
 	statusCode  int
 }
 
+// Deprecated: используется встроенный логер в chi
 // ResponseWriterWrapper структура для захвата ответа.
 type ResponseWriterWrapper struct {
 	originResponse *http.ResponseWriter
@@ -23,7 +24,7 @@ type ResponseWriterWrapper struct {
 	loggingData    *loggingData
 }
 
-// NewResponseWriterWrapper deprecated
+// Deprecated: используется встроенный логер в chi
 // NewResponseWriterWrapper конструктор логгера.
 func NewResponseWriterWrapper(rw http.ResponseWriter, request http.Request) *ResponseWriterWrapper {
 	return &ResponseWriterWrapper{
@@ -57,6 +58,7 @@ func (rww ResponseWriterWrapper) WriteHeader(statusCode int) {
 	rww.loggingData.url = rww.originRequest.URL.String()
 }
 
+// Deprecated: используется встроенный логер в chi
 // MiddlewareLogger логгер запросов/ответов.
 func MiddlewareLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {

@@ -15,7 +15,7 @@ import (
 
 // TestRedirectHandler тест обработчика для декодирования ссылки
 func TestRedirectHandler(t *testing.T) {
-	_, _ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(memoryStorage)
 	stop := make(chan struct{})
@@ -103,7 +103,7 @@ func TestRedirectHandler(t *testing.T) {
 }
 
 func BenchmarkRedirectHandler(b *testing.B) {
-	_, _ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
 	shortURLService := url.NewShortURLService(memoryStorage)
 	sessionStorage := storage.NewSessionStorage()
