@@ -1,4 +1,5 @@
 # go-musthave-shortener-tpl
+![coverage](./badges/cover.svg)
 
 Шаблон репозитория для трека «Сервис сокращения URL».
 
