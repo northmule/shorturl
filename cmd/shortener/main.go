@@ -52,7 +52,13 @@ func run(ctx context.Context) error {
 	shortURLService := url.NewShortURLService(storage, storage)
 	stop := make(chan struct{})
 	worker := workers.NewWorker(storage, stop)
-	routes := handlers.NewRoutes(shortURLService, storage, sessionStorage, worker).Init()
+
+	handlerBuilder := handlers.GetBuilder()
+	handlerBuilder.SetService(shortURLService)
+	handlerBuilder.SetStorage(storage)
+	handlerBuilder.SetSessionStorage(sessionStorage)
+	handlerBuilder.SetWorker(worker)
+	routes := handlerBuilder.GetAppRoutes().Init()
 
 	if cfg.PprofEnabled {
 		routes.Mount("/debug", middleware.Profiler())

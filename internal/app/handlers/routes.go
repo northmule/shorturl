@@ -20,6 +20,7 @@ type Routes struct {
 	storage         storage.StorageQuery
 }
 
+// todo: поменять на RoutesBuilder
 // NewRoutes Конструктор маршрутов.
 func NewRoutes(shortURLService *url.ShortURLService, storage storage.StorageQuery, sessionStorage storage.SessionAdapter, worker *workers.Worker) *Routes {
 	return &Routes{
