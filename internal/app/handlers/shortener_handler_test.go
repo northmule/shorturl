@@ -21,12 +21,13 @@ import (
 func TestShortenerHandler(t *testing.T) {
 	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
 	}()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 
 	type want struct {
@@ -96,7 +97,7 @@ func TestShortenerHandler(t *testing.T) {
 			if tt.want.code != response.StatusCode {
 				t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", tt.want.code, response.StatusCode)
 			}
-			urlModel, _ := shortURLService.Storage.FindByURL(tt.request.body)
+			urlModel, _ := shortURLService.Finder.FindByURL(tt.request.body)
 
 			if tt.want.isError == (urlModel.URL != "") {
 				t.Error("URL не найден")
@@ -107,12 +108,13 @@ func TestShortenerHandler(t *testing.T) {
 
 func TestMethodNotAllowed(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
 	}()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 
 	request, err := http.NewRequest(http.MethodGet, ts.URL, nil)
@@ -132,12 +134,13 @@ func TestMethodNotAllowed(t *testing.T) {
 
 func TestShortenerJsonHandler(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
 	}()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 
 	type want struct {
@@ -213,7 +216,7 @@ func TestShortenerJsonHandler(t *testing.T) {
 				t.Errorf("Ошибка разбора json ответа: %s", respBody)
 			}
 			jsonResponse.Result = strings.Trim(jsonResponse.Result, "/")
-			urlModel, _ := shortURLService.Storage.FindByShortURL(jsonResponse.Result)
+			urlModel, _ := shortURLService.Finder.FindByShortURL(jsonResponse.Result)
 
 			if tt.want.isError == (urlModel != nil) {
 				t.Error("URL не найден")
@@ -225,7 +228,8 @@ func TestShortenerJsonHandler(t *testing.T) {
 func TestGzipCompression(t *testing.T) {
 	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
@@ -276,7 +280,7 @@ func TestGzipCompression(t *testing.T) {
 		}
 		jsonResponse.Result = strings.Trim(jsonResponse.Result, "/")
 		// Если всё ок, то должена найтись модель по короткой ссылке с сервера
-		urlModel, _ := shortURLService.Storage.FindByShortURL(jsonResponse.Result)
+		urlModel, _ := shortURLService.Finder.FindByShortURL(jsonResponse.Result)
 		if urlModel == nil {
 			t.Error("Закодированный URL из ответа в БД не найден")
 		}
@@ -303,7 +307,7 @@ func TestGzipCompression(t *testing.T) {
 		}
 		jsonResponse.Result = strings.Trim(jsonResponse.Result, "/")
 		// Если всё ок, то должена найтись модель по короткой ссылке с сервера
-		urlModel, _ := shortURLService.Storage.FindByShortURL(jsonResponse.Result)
+		urlModel, _ := shortURLService.Finder.FindByShortURL(jsonResponse.Result)
 		if urlModel == nil {
 			t.Error("Закодированный URL из ответа в БД не найден")
 		}
@@ -338,7 +342,7 @@ func TestGzipCompression(t *testing.T) {
 		}
 		jsonResponse.Result = strings.Trim(jsonResponse.Result, "/")
 		// Если всё ок, то должена найтись модель по короткой ссылке с сервера
-		urlModel, _ := shortURLService.Storage.FindByShortURL(jsonResponse.Result)
+		urlModel, _ := shortURLService.Finder.FindByShortURL(jsonResponse.Result)
 		if urlModel == nil {
 			t.Error("Закодированный URL из ответа в БД не найден")
 		}
@@ -348,12 +352,12 @@ func TestGzipCompression(t *testing.T) {
 func BenchmarkShortenerHandler(b *testing.B) {
 	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(memoryStorage)
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
 	}()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	ts := httptest.NewServer(NewRoutes(shortURLService, memoryStorage, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -376,12 +380,12 @@ func BenchmarkShortenerHandler(b *testing.B) {
 func BenchmarkShortenerJSONHandler(b *testing.B) {
 	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(memoryStorage)
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
 	}()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	ts := httptest.NewServer(NewRoutes(shortURLService, memoryStorage, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -404,12 +408,12 @@ func BenchmarkShortenerJSONHandler(b *testing.B) {
 func BenchmarkShortenerBatch(b *testing.B) {
 	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
 	}()
-	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	ts := httptest.NewServer(NewRoutes(shortURLService, memoryStorage, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

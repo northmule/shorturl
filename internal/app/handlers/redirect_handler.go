@@ -12,11 +12,6 @@ type RedirectHandler struct {
 	service *url.ShortURLService
 }
 
-// IRedirectHandler общий интерфейс.
-type IRedirectHandler interface {
-	RedirectHandler(res http.ResponseWriter, req *http.Request)
-}
-
 // NewRedirectHandler конструктор хэндлера.
 func NewRedirectHandler(urlService *url.ShortURLService) RedirectHandler {
 	redirectHandler := &RedirectHandler{

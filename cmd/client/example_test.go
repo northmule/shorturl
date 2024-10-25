@@ -13,7 +13,8 @@ import (
 	"github.com/northmule/shorturl/internal/app/workers"
 )
 
-var shortURLService = url.NewShortURLService(storage.NewMemoryStorage())
+var stor = storage.NewMemoryStorage()
+var shortURLService = url.NewShortURLService(stor, stor)
 var stop = make(chan struct{})
 
 func Example() {

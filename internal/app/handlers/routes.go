@@ -15,18 +15,18 @@ import (
 // Routes маршруты приложения.
 type Routes struct {
 	shortURLService *url.ShortURLService
-	storage         url.IStorage
 	sessionStorage  storage.ISession
 	worker          *workers.Worker
+	storage         storage.StorageQuery
 }
 
 // NewRoutes Конструктор маршрутов.
-func NewRoutes(shortURLService *url.ShortURLService, storage url.IStorage, sessionStorage storage.ISession, worker *workers.Worker) *Routes {
+func NewRoutes(shortURLService *url.ShortURLService, storage storage.StorageQuery, sessionStorage storage.ISession, worker *workers.Worker) *Routes {
 	return &Routes{
 		shortURLService: shortURLService,
-		storage:         storage,
 		sessionStorage:  sessionStorage,
 		worker:          worker,
+		storage:         storage,
 	}
 }
 
@@ -44,7 +44,7 @@ func (routes *Routes) Init() chi.Router {
 	r.Use(middleware.RequestLogger(logger.LogSugar))
 	r.Use(middlewarehandler.MiddlewareGzipCompressor)
 
-	shortenerHandler := NewShortenerHandler(routes.shortURLService, routes.storage)
+	shortenerHandler := NewShortenerHandler(routes.shortURLService, routes.storage, routes.storage)
 	redirectHandler := NewRedirectHandler(routes.shortURLService)
 	pingHandler := NewPingHandler(routes.storage)
 

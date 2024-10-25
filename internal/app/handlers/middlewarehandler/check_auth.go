@@ -11,23 +11,27 @@ import (
 	AppContext "github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/auntificator"
-	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
 // CheckAuth структура.
 type CheckAuth struct {
-	storage url.IStorage
-	session storage.ISession
+	userCreator UserCreator
+	session     storage.ISession
 }
 
 // NewCheckAuth конструктор структуры.
-func NewCheckAuth(storage url.IStorage, session storage.ISession) *CheckAuth {
+func NewCheckAuth(userCreator UserCreator, session storage.ISession) *CheckAuth {
 	return &CheckAuth{
-		storage: storage,
-		session: session,
+		userCreator: userCreator,
+		session:     session,
 	}
+}
+
+// UserCreator интерфейс создания пользователей.
+type UserCreator interface {
+	CreateUser(user models.User) (int64, error)
 }
 
 // AccessVerificationUserUrls проверка доступа пользователя.
@@ -100,7 +104,7 @@ func (c *CheckAuth) authorization(res http.ResponseWriter, userUUID string, toke
 }
 
 func (c *CheckAuth) createUser(userUUID string) {
-	_, err := c.storage.CreateUser(models.User{
+	_, err := c.userCreator.CreateUser(models.User{
 		Name:     "test_user",
 		UUID:     userUUID,
 		Login:    "test_user" + userUUID,

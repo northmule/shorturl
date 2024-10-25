@@ -102,7 +102,7 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		storage  url.IStorage
+		storage  storage.StorageQuery
 		wantBody string
 		wantCode int
 	}{
@@ -127,7 +127,7 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			shortURLService := url.NewShortURLService(tt.storage)
+			shortURLService := url.NewShortURLService(tt.storage, tt.storage)
 			stop := make(chan struct{})
 			sessionStorage := storage.NewSessionStorage()
 			defer func() {
@@ -164,7 +164,7 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 		mockStorage := new(MockPostgresStorageBad)
 		mockStorage.On("Ping").Return(errors.New("bad test request"))
 		sessionStorage := storage.NewSessionStorage()
-		shortURLService := url.NewShortURLService(mockStorage)
+		shortURLService := url.NewShortURLService(mockStorage, mockStorage)
 		stop := make(chan struct{})
 		defer func() {
 			stop <- struct{}{}

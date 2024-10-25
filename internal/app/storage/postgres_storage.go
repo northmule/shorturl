@@ -24,6 +24,28 @@ type DBQuery interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
+// StorageQuery общий интерфес хранилища
+type StorageQuery interface {
+	// Add добавляет URL.
+	Add(url models.URL) (int64, error)
+	// CreateUser создание пользователя.
+	CreateUser(user models.User) (int64, error)
+	// LikeURLToUser связывает пользователя с ссылкой.
+	LikeURLToUser(urlID int64, userUUID string) error
+	// FindByShortURL поиск по короткой ссылке.
+	FindByShortURL(shortURL string) (*models.URL, error)
+	// FindByURL поиск по URL.
+	FindByURL(url string) (*models.URL, error)
+	// Ping проверка соединения с БД.
+	Ping() error
+	// MultiAdd вставка массива адресов.
+	MultiAdd(urls []models.URL) error
+	// FindUrlsByUserID поиск ссылок пользователя
+	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
+	// SoftDeletedShortURL пометка ссылки как удалённой.
+	SoftDeletedShortURL(userUUID string, shortURL ...string) error
+}
+
 // PostgresStorage хранилище в БД.
 type PostgresStorage struct {
 	DB    DBQuery

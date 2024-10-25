@@ -4,19 +4,24 @@ import (
 	"net/http"
 
 	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/url"
 )
 
 // PingHandler хэндлер для обработки ping запроса.
 type PingHandler struct {
-	storage url.IStorage
+	pinger Pinger
 }
 
 // NewPingHandler конструктор.
-func NewPingHandler(storage url.IStorage) *PingHandler {
+func NewPingHandler(pinger Pinger) *PingHandler {
 	return &PingHandler{
-		storage: storage,
+		pinger: pinger,
 	}
+}
+
+// Pinger Интерфейс првоерки соединения.
+type Pinger interface {
+	// Ping проверка соединения с БД.
+	Ping() error
 }
 
 // CheckStorageConnect обработка запроса проверки соединения с БД /ping.
@@ -25,7 +30,7 @@ func NewPingHandler(storage url.IStorage) *PingHandler {
 // @Failure 500 {string} string "Не удалось подключиться к БД"
 // @Router /ping [get]
 func (p *PingHandler) CheckStorageConnect(res http.ResponseWriter, req *http.Request) {
-	err := p.storage.Ping()
+	err := p.pinger.Ping()
 	if err != nil {
 		http.Error(res, "no connect db", http.StatusInternalServerError)
 		logger.LogSugar.Errorf("CheckStorageConnect Не удалось подключиться к БД %s", err)

@@ -49,7 +49,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 	sessionStorage := appStorage.NewSessionStorage()
-	shortURLService := url.NewShortURLService(storage)
+	shortURLService := url.NewShortURLService(storage, storage)
 	stop := make(chan struct{})
 	worker := workers.NewWorker(storage, stop)
 	routes := handlers.NewRoutes(shortURLService, storage, sessionStorage, worker).Init()
@@ -93,7 +93,7 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func getStorage(ctx context.Context, cfg *config.Config) (url.IStorage, error) {
+func getStorage(ctx context.Context, cfg *config.Config) (appStorage.StorageQuery, error) {
 
 	if cfg.DataBaseDsn != "" {
 		s, err := appStorage.NewPostgresStorage(cfg.DataBaseDsn)

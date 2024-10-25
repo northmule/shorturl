@@ -16,13 +16,13 @@ import (
 
 // UserURLsHandler хэндлер отображения ссылок пользователя.
 type UserURLsHandler struct {
-	finder  IFinderURLs
+	finder  URLFinder
 	session storage.ISession
 	worker  *workers.Worker
 }
 
 // NewUserUrlsHandler Конструктор.
-func NewUserUrlsHandler(finder IFinderURLs, sessionStorage storage.ISession, worker *workers.Worker) *UserURLsHandler {
+func NewUserUrlsHandler(finder URLFinder, sessionStorage storage.ISession, worker *workers.Worker) *UserURLsHandler {
 	instance := UserURLsHandler{
 		finder:  finder,
 		session: sessionStorage,
@@ -37,8 +37,8 @@ type ResponseView struct {
 	OriginalURL string `json:"original_url"`
 }
 
-// IFinderURLs Поиск URL-s по пользователю.
-type IFinderURLs interface {
+// URLFinder Поиск URL-s по пользователю.
+type URLFinder interface {
 	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
 }
 

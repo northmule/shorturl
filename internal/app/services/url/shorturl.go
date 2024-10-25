@@ -24,36 +24,32 @@ type ShortURLData struct {
 
 // ShortURLService сервис сокращения ссылок.
 type ShortURLService struct {
-	Storage      IStorage
+	Finder       Finder
+	Setter       Setter
 	shortURLData ShortURLData
 }
 
-// IStorage методы.
-type IStorage interface {
-	// Add добавляет URL.
+// Setter добавления нового URL.
+type Setter interface {
 	Add(url models.URL) (int64, error)
-	// CreateUser создание пользователя.
-	CreateUser(user models.User) (int64, error)
-	// LikeURLToUser связывает пользователя с ссылкой.
-	LikeURLToUser(urlID int64, userUUID string) error
+	MultiAdd(urls []models.URL) error
+}
+
+// Finder поиск значений.
+type Finder interface {
+	// FindUrlsByUserID поиск ссылок пользователя
+	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
 	// FindByShortURL поиск по короткой ссылке.
 	FindByShortURL(shortURL string) (*models.URL, error)
 	// FindByURL поиск по URL.
 	FindByURL(url string) (*models.URL, error)
-	// Ping проверка соединения с БД.
-	Ping() error
-	// MultiAdd вставка массива адресов.
-	MultiAdd(urls []models.URL) error
-	// FindUrlsByUserID поиск ссылок пользователя
-	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
-	// SoftDeletedShortURL пометка ссылки как удалённой.
-	SoftDeletedShortURL(userUUID string, shortURL ...string) error
 }
 
 // NewShortURLService конструктор сервиса.
-func NewShortURLService(storage IStorage) *ShortURLService {
+func NewShortURLService(finder Finder, setter Setter) *ShortURLService {
 	service := &ShortURLService{
-		Storage: storage,
+		Finder: finder,
+		Setter: setter,
 	}
 
 	return service
@@ -61,7 +57,7 @@ func NewShortURLService(storage IStorage) *ShortURLService {
 
 // DecodeURL вернёт короткий url.
 func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) {
-	modelURL, _ := s.Storage.FindByURL(url)
+	modelURL, _ := s.Finder.FindByURL(url)
 	if modelURL.ShortURL != "" {
 		s.shortURLData.ShortURL = modelURL.ShortURL
 	} else {
@@ -69,7 +65,7 @@ func (s *ShortURLService) DecodeURL(url string) (data *ShortURLData, err error) 
 	}
 
 	s.shortURLData.URL = url
-	urlID, err := s.Storage.Add(models.URL{
+	urlID, err := s.Setter.Add(models.URL{
 		ShortURL: s.shortURLData.ShortURL,
 		URL:      s.shortURLData.URL,
 	})
@@ -93,7 +89,7 @@ func (s *ShortURLService) DecodeURLs(urls []string) ([]models.URL, error) {
 		modelURL.ShortURL = newRandomString(ShortURLDefaultSize)
 		modelURLs[i] = *modelURL
 	}
-	err := s.Storage.MultiAdd(modelURLs)
+	err := s.Setter.MultiAdd(modelURLs)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +98,7 @@ func (s *ShortURLService) DecodeURLs(urls []string) ([]models.URL, error) {
 
 // EncodeShortURL вернёт полный url.
 func (s *ShortURLService) EncodeShortURL(shortURL string) (data *ShortURLData, err error) {
-	modelURL, err := s.Storage.FindByShortURL(shortURL)
+	modelURL, err := s.Finder.FindByShortURL(shortURL)
 	if err != nil {
 		return nil, errors.New("short url not found")
 	}

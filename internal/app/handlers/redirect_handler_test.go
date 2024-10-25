@@ -18,7 +18,7 @@ import (
 func TestRedirectHandler(t *testing.T) {
 	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(memoryStorage)
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
@@ -106,7 +106,7 @@ func TestRedirectHandler(t *testing.T) {
 func BenchmarkRedirectHandler(b *testing.B) {
 	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(memoryStorage)
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
 	sessionStorage := storage.NewSessionStorage()
 	stop := make(chan struct{})
 	defer func() {

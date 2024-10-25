@@ -71,10 +71,10 @@ func TestShortURLService_DecodeURL(t *testing.T) {
 	storageMockInstance := &storageMock{
 		db: &map[string]models.URL{},
 	}
-	NewShortURLService(storageMockInstance)
+	NewShortURLService(storageMockInstance, storageMockInstance)
 
 	type fields struct {
-		Storage      IStorage
+		Storage      storage.StorageQuery
 		shortURLData ShortURLData
 	}
 	type args struct {
@@ -106,7 +106,8 @@ func TestShortURLService_DecodeURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &ShortURLService{
-				Storage:      tt.fields.Storage,
+				Finder:       tt.fields.Storage,
+				Setter:       tt.fields.Storage,
 				shortURLData: tt.fields.shortURLData,
 			}
 			shortURLResult, err := s.DecodeURL(tt.args.url)
@@ -114,12 +115,12 @@ func TestShortURLService_DecodeURL(t *testing.T) {
 				t.Errorf("DecodeURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			modelURL, _ := s.Storage.FindByShortURL(shortURLResult.ShortURL)
+			modelURL, _ := s.Finder.FindByShortURL(shortURLResult.ShortURL)
 			if modelURL.URL != tt.args.url {
 				t.Errorf("DecodeURL() got = %v, want %v", modelURL.URL, tt.args.url)
 			}
 
-			modelURL, _ = s.Storage.FindByURL(tt.args.url)
+			modelURL, _ = s.Finder.FindByURL(tt.args.url)
 
 			if modelURL.ShortURL != shortURLResult.ShortURL {
 				t.Errorf("DecodeURL() got = %v, want %v", modelURL.ShortURL, shortURLResult.ShortURL)
@@ -133,7 +134,7 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 	storageMockInstance := &storageMock{
 		db: &map[string]models.URL{},
 	}
-	NewShortURLService(storageMockInstance)
+	NewShortURLService(storageMockInstance, storageMockInstance)
 
 	_, _ = storageMockInstance.Add(models.URL{
 		ShortURL: "123",
@@ -141,7 +142,7 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 	})
 
 	type fields struct {
-		Storage      IStorage
+		Storage      storage.StorageQuery
 		shortURLData ShortURLData
 	}
 	type args struct {
@@ -172,7 +173,8 @@ func TestShortURLService_EncodeShortURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &ShortURLService{
-				Storage:      tt.fields.Storage,
+				Finder:       tt.fields.Storage,
+				Setter:       tt.fields.Storage,
 				shortURLData: tt.fields.shortURLData,
 			}
 			shortURLResult, err := s.EncodeShortURL(tt.args.shortURL)
@@ -194,7 +196,7 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		Storage IStorage
+		Storage storage.StorageQuery
 		urls    []string
 		wantErr bool
 	}{
@@ -233,7 +235,8 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &ShortURLService{
-				Storage:      tt.Storage,
+				Finder:       tt.Storage,
+				Setter:       tt.Storage,
 				shortURLData: ShortURLData{},
 			}
 			_, err := s.DecodeURLs(tt.urls)
@@ -242,7 +245,7 @@ func TestShortURLService_DecodeURLs(t *testing.T) {
 				return
 			}
 			for _, url := range tt.urls {
-				_, err := s.Storage.FindByURL(url)
+				_, err := s.Finder.FindByURL(url)
 				if err != nil {
 					t.Errorf("DecodeURL() error = %v", err)
 				}
@@ -262,7 +265,8 @@ func BenchmarkDecodeURLs(b *testing.B) {
 	_ = logger.InitLogger("fatal")
 	storageMemoryMock := storage.NewMemoryStorage()
 	service := &ShortURLService{
-		Storage:      storageMemoryMock,
+		Finder:       storageMemoryMock,
+		Setter:       storageMemoryMock,
 		shortURLData: ShortURLData{},
 	}
 	testData := strings.Repeat("A ", 100)

@@ -20,26 +20,31 @@ import (
 type ShortenerHandler struct {
 	service *url.ShortURLService
 	finder  Finder
-	setter  Setter
+	setter  LikeURLToUserSetter
+}
+
+// Finder поиск значений.
+type Finder interface {
+	// FindUrlsByUserID поиск ссылок пользователя
+	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
+	// FindByShortURL поиск по короткой ссылке.
+	FindByShortURL(shortURL string) (*models.URL, error)
+	// FindByURL поиск по URL.
+	FindByURL(url string) (*models.URL, error)
 }
 
 // NewShortenerHandler конструктор.
-func NewShortenerHandler(urlService *url.ShortURLService, storage url.IStorage) ShortenerHandler {
+func NewShortenerHandler(urlService *url.ShortURLService, finder Finder, setter LikeURLToUserSetter) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{
 		service: urlService,
-		finder:  storage,
-		setter:  storage,
+		finder:  finder,
+		setter:  setter,
 	}
 	return *shortenerHandler
 }
 
-// Finder интерфейс поиска URL-s.
-type Finder interface {
-	FindByURL(url string) (*models.URL, error)
-}
-
-// Setter интерфейс связывания URL с пользователем.
-type Setter interface {
+// LikeURLToUserSetter интерфейс связывания URL с пользователем.
+type LikeURLToUserSetter interface {
 	LikeURLToUser(urlID int64, userUUID string) error
 }
 
