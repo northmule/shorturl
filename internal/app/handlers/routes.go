@@ -15,13 +15,13 @@ import (
 // Routes маршруты приложения.
 type Routes struct {
 	shortURLService *url.ShortURLService
-	sessionStorage  storage.ISession
+	sessionStorage  storage.SessionAdapter
 	worker          *workers.Worker
 	storage         storage.StorageQuery
 }
 
 // NewRoutes Конструктор маршрутов.
-func NewRoutes(shortURLService *url.ShortURLService, storage storage.StorageQuery, sessionStorage storage.ISession, worker *workers.Worker) *Routes {
+func NewRoutes(shortURLService *url.ShortURLService, storage storage.StorageQuery, sessionStorage storage.SessionAdapter, worker *workers.Worker) *Routes {
 	return &Routes{
 		shortURLService: shortURLService,
 		sessionStorage:  sessionStorage,

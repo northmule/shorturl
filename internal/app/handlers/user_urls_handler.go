@@ -17,12 +17,12 @@ import (
 // UserURLsHandler хэндлер отображения ссылок пользователя.
 type UserURLsHandler struct {
 	finder  URLFinder
-	session storage.ISession
+	session storage.SessionAdapter
 	worker  *workers.Worker
 }
 
 // NewUserUrlsHandler Конструктор.
-func NewUserUrlsHandler(finder URLFinder, sessionStorage storage.ISession, worker *workers.Worker) *UserURLsHandler {
+func NewUserUrlsHandler(finder URLFinder, sessionStorage storage.SessionAdapter, worker *workers.Worker) *UserURLsHandler {
 	instance := UserURLsHandler{
 		finder:  finder,
 		session: sessionStorage,
