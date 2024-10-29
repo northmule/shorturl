@@ -8,3 +8,15 @@ install-go-test-coverage:
 check-coverage: install-go-test-coverage
 	go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
 	${GOBIN}/go-test-coverage --config=./.testcoverage.yml --badge-file-name=./badges/cover.svg
+
+.PHONY: build-staticlint
+build-staticlint:
+	cd ./cmd/staticlint && go build -buildvcs=false -o staticlint && chmod +x staticlint
+
+.PHONY: check-staticlint
+check-staticlint:
+	./cmd/staticlint/staticlint ./...
+
+.PHONY: start-db
+start-db:
+	cd ./build/package/docker/postgres && docker compose up -d

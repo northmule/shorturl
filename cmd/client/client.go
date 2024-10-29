@@ -56,7 +56,12 @@ func ClientApp(params Params) (*http.Response, error) {
 	if isStdin {
 		log.Println("Статус-код ", response.Status)
 		body, err := io.ReadAll(response.Body)
-		defer response.Body.Close()
+		defer func(Body io.ReadCloser) {
+			err = Body.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(response.Body)
 		if err != nil {
 			return nil, fmt.Errorf("execute request: %v", err)
 		}
