@@ -1,19 +1,18 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/northmule/shorturl/internal/app/services/url"
-	"net/http"
 )
 
+// RedirectHandler хэндлер для обработки коротких ссылок.
 type RedirectHandler struct {
 	service *url.ShortURLService
 }
 
-type RedirectHandlerInterface interface {
-	RedirectHandler(res http.ResponseWriter, req *http.Request)
-}
-
+// NewRedirectHandler конструктор хэндлера.
 func NewRedirectHandler(urlService *url.ShortURLService) RedirectHandler {
 	redirectHandler := &RedirectHandler{
 		service: urlService,
@@ -21,7 +20,11 @@ func NewRedirectHandler(urlService *url.ShortURLService) RedirectHandler {
 	return *redirectHandler
 }
 
-// RedirectHandler обработчик получения оригинальной ссылки из короткой
+// RedirectHandler обработчик получения оригинальной ссылки из короткой.
+// @Summary Преобразование короткой ссылки в оригинальную с переходом по ссылке
+// @Failure 410
+// @Success 307 {string} Location "origin_url"
+// @Router /{id} [get]
 func (r *RedirectHandler) RedirectHandler(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 	if id == "" {

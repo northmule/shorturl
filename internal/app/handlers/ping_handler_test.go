@@ -2,17 +2,19 @@ package handlers
 
 import (
 	"errors"
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/url"
-	"github.com/northmule/shorturl/internal/app/storage"
-	"github.com/northmule/shorturl/internal/app/storage/models"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/url"
+	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/storage/models"
+	"github.com/northmule/shorturl/internal/app/workers"
+	"github.com/stretchr/testify/mock"
 )
 
 type MockPostgresStorageOk struct {
@@ -87,7 +89,7 @@ func (m *MockPostgresStorageBad) SoftDeletedShortURL(userUUID string, shortURL .
 }
 
 func TestPingHandler_CheckStorageConnect(t *testing.T) {
-	_ = logger.NewLogger("fatal")
+	_ = logger.InitLogger("fatal")
 
 	file, err := os.CreateTemp("/tmp", "TestFileStorage_Add_*.json")
 	if err != nil {
@@ -100,7 +102,7 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		storage  url.StorageInterface
+		storage  storage.StorageQuery
 		wantBody string
 		wantCode int
 	}{
@@ -125,9 +127,13 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			shortURLService := url.NewShortURLService(tt.storage)
+			shortURLService := url.NewShortURLService(tt.storage, tt.storage)
 			stop := make(chan struct{})
-			ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+			sessionStorage := storage.NewSessionStorage()
+			defer func() {
+				stop <- struct{}{}
+			}()
+			ts := httptest.NewServer(NewRoutes(shortURLService, tt.storage, sessionStorage, workers.NewWorker(tt.storage, stop)).Init())
 			defer ts.Close()
 
 			request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)
@@ -157,10 +163,13 @@ func TestPingHandler_CheckStorageConnect(t *testing.T) {
 	t.Run("Возврат_ошибки_подключения", func(t *testing.T) {
 		mockStorage := new(MockPostgresStorageBad)
 		mockStorage.On("Ping").Return(errors.New("bad test request"))
-
-		shortURLService := url.NewShortURLService(mockStorage)
+		sessionStorage := storage.NewSessionStorage()
+		shortURLService := url.NewShortURLService(mockStorage, mockStorage)
 		stop := make(chan struct{})
-		ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+		defer func() {
+			stop <- struct{}{}
+		}()
+		ts := httptest.NewServer(NewRoutes(shortURLService, mockStorage, sessionStorage, workers.NewWorker(mockStorage, stop)).Init())
 		defer ts.Close()
 
 		request, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", nil)

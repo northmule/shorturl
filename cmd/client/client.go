@@ -1,3 +1,4 @@
+// Package client client используется для запросов в рамках тестов приложения.
 package client
 
 import (
@@ -11,15 +12,19 @@ import (
 	"strings"
 )
 
+// Настройки клиента.
 const (
 	endpoint    = "http://localhost:8080/"
 	contentType = "application/x-www-form-urlencoded"
 )
 
+// Params параметры клиента.
 type Params struct {
+	// Request запрос
 	Request *http.Request
 }
 
+// ClientApp Клиент для запросов в тестах
 func ClientApp(params Params) (*http.Response, error) {
 
 	request := params.Request

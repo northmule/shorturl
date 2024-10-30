@@ -1,34 +1,55 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/northmule/shorturl/internal/app/handlers/middlewarehandler"
+	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/workers"
-	"net/http"
 )
 
-// AppRoutes маршруты приложения
-func AppRoutes(shortURLService *url.ShortURLService, stop <-chan struct{}) chi.Router {
+// Routes маршруты приложения.
+type Routes struct {
+	shortURLService *url.ShortURLService
+	sessionStorage  storage.SessionAdapter
+	worker          *workers.Worker
+	storage         storage.StorageQuery
+}
+
+// todo: поменять на RoutesBuilder
+// NewRoutes Конструктор маршрутов.
+func NewRoutes(shortURLService *url.ShortURLService, storage storage.StorageQuery, sessionStorage storage.SessionAdapter, worker *workers.Worker) *Routes {
+	return &Routes{
+		shortURLService: shortURLService,
+		sessionStorage:  sessionStorage,
+		worker:          worker,
+		storage:         storage,
+	}
+}
+
+// Init создаёт маршруты.
+func (routes *Routes) Init() chi.Router {
 	r := chi.NewRouter()
 
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("method not expect\n"))
 	})
-	sessionStorage := storage.NewSessionStorage()
-	checkAuth := middlewarehandler.NewCheckAuth(shortURLService.Storage, &sessionStorage)
 
-	r.Use(middlewarehandler.MiddlewareLogger)
+	checkAuth := middlewarehandler.NewCheckAuth(routes.storage, routes.sessionStorage)
+
+	r.Use(middleware.RequestLogger(logger.LogSugar))
 	r.Use(middlewarehandler.MiddlewareGzipCompressor)
 
-	shortenerHandler := NewShortenerHandler(shortURLService, shortURLService.Storage)
-	redirectHandler := NewRedirectHandler(shortURLService)
-	pingHandler := NewPingHandler(shortURLService.Storage)
+	shortenerHandler := NewShortenerHandler(routes.shortURLService, routes.storage, routes.storage)
+	redirectHandler := NewRedirectHandler(routes.shortURLService)
+	pingHandler := NewPingHandler(routes.storage)
 
-	worker := workers.NewWorker(shortURLService.Storage, stop)
-	userUrlsHandler := NewUserUrlsHandler(shortURLService.Storage, &sessionStorage, worker)
+	userUrlsHandler := NewUserUrlsHandler(routes.storage, routes.sessionStorage, routes.worker)
 
 	r.With(
 		checkAuth.AuthEveryone,

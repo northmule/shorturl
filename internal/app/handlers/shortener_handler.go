@@ -4,49 +4,56 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"io"
-	"net/http"
-	"regexp"
 )
 
-var regexURL = regexp.MustCompile(`(http|https)://\S+`)
-
+// ShortenerHandler хэндлер сокращения ссылок.
 type ShortenerHandler struct {
-	regexURL *regexp.Regexp
-	service  *url.ShortURLService
-	finder   Finder
-	setter   Setter
+	service *url.ShortURLService
+	finder  Finder
+	setter  LikeURLToUserSetter
 }
 
-type ShortenerHandlerInterface interface {
-	ShortenerHandler(res http.ResponseWriter, req *http.Request)
+// Finder поиск значений.
+type Finder interface {
+	// FindUrlsByUserID поиск ссылок пользователя
+	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
+	// FindByShortURL поиск по короткой ссылке.
+	FindByShortURL(shortURL string) (*models.URL, error)
+	// FindByURL поиск по URL.
+	FindByURL(url string) (*models.URL, error)
 }
 
-func NewShortenerHandler(urlService *url.ShortURLService, storage url.StorageInterface) ShortenerHandler {
+// NewShortenerHandler конструктор.
+func NewShortenerHandler(urlService *url.ShortURLService, finder Finder, setter LikeURLToUserSetter) ShortenerHandler {
 	shortenerHandler := &ShortenerHandler{
-		regexURL: regexURL,
-		service:  urlService,
-		finder:   storage,
-		setter:   storage,
+		service: urlService,
+		finder:  finder,
+		setter:  setter,
 	}
 	return *shortenerHandler
 }
 
-type Finder interface {
-	FindByURL(url string) (*models.URL, error)
-}
-
-type Setter interface {
+// LikeURLToUserSetter интерфейс связывания URL с пользователем.
+type LikeURLToUserSetter interface {
 	LikeURLToUser(urlID int64, userUUID string) error
 }
 
-// ShortenerHandler обработчик создания короткой ссылки
+// ShortenerHandler обработчик создания короткой ссылки.
+// @Summary Получение короткой ссылки
+// @Failure 400
+// @Success 307 {string} Location "origin_url"
+// @Param url body string true "оригинальная ссылка для сокращения" SchemaExample(https://ya.ru/1)
+// @Router / [post]
 func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.Request) {
 	bodyValue, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -55,8 +62,9 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 	}
 	defer req.Body.Close()
 
-	// Проверяем, содержится ли в bodyValue URL
-	if !s.regexURL.Match(bodyValue) {
+	// Проверяем, содержится ли в bodyValue URL.
+	bodyString := string(bodyValue)
+	if !strings.Contains(bodyString, "http://") && !strings.Contains(bodyString, "https://") {
 		http.Error(res, "expected url", http.StatusBadRequest)
 		return
 	}
@@ -87,14 +95,22 @@ func (s *ShortenerHandler) ShortenerHandler(res http.ResponseWriter, req *http.R
 	}
 }
 
+// ShortenerRequest запрос к методу ShortenerJSONHandler.
 type ShortenerRequest struct {
 	URL string `json:"URL"`
 }
+
+// JSONResponse ответ от метода ShortenerJSONHandler.
 type JSONResponse struct {
 	Result string `json:"result"`
 }
 
-// ShortenerJSONHandler принимает и отдаёт json
+// ShortenerJSONHandler принимает и отдаёт json.
+// @Summary Получение коротких ссылок
+// @Failure 400
+// @Success 200 {object} JSONResponse
+// @Param ShortenerJSONHandler body ShortenerRequest true "объект с сылками для сокращения"
+// @Router /api/shorten [post]
 func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *http.Request) {
 
 	bodyValue, err := io.ReadAll(req.Body)
@@ -112,7 +128,7 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 	}
 
 	// Проверяем, содержится ли в bodyValue URL
-	if !s.regexURL.MatchString(shortenerRequest.URL) {
+	if !strings.Contains(shortenerRequest.URL, "http://") && !strings.Contains(shortenerRequest.URL, "https://") {
 		http.Error(res, "expected url", http.StatusBadRequest)
 		return
 	}
@@ -153,17 +169,24 @@ func (s *ShortenerHandler) ShortenerJSONHandler(res http.ResponseWriter, req *ht
 	}
 }
 
+// BatchRequest запрос для списка адресов.
 type BatchRequest struct {
 	CorrelationID string `json:"correlation_id"`
 	OriginalURL   string `json:"original_url"`
 }
 
+// BatchResponse ответ для списка адресов.
 type BatchResponse struct {
 	CorrelationID string `json:"correlation_id"`
 	ShortURL      string `json:"short_url"`
 }
 
-// ShortenerBatch обработка списка адресов
+// ShortenerBatch обработка списка адресов.
+// @Summary Получение коротких ссылок
+// @Failure 400
+// @Success 200 {object} BatchResponse
+// @Param ShortenerBatch body BatchRequest true "объект с сылками для сокращения"
+// @Router /api/shorten/batch [post]
 func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Request) {
 
 	bodyValue, err := io.ReadAll(req.Body)
@@ -181,10 +204,14 @@ func (s *ShortenerHandler) ShortenerBatch(res http.ResponseWriter, req *http.Req
 	}
 	urls := make([]string, 0)
 	for _, requestItem := range requestItems {
-		if !s.regexURL.MatchString(requestItem.OriginalURL) {
+		if !strings.Contains(requestItem.OriginalURL, "http://") && !strings.Contains(requestItem.OriginalURL, "https://") {
 			continue
 		}
 		urls = append(urls, requestItem.OriginalURL)
+	}
+	if len(urls) == 0 {
+		http.Error(res, "error unmarshal json request", http.StatusBadRequest)
+		return
 	}
 	modelURLs, err := s.service.DecodeURLs(urls)
 	if err != nil {

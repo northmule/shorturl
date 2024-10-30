@@ -4,17 +4,23 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/northmule/shorturl/internal/app/logger"
 	"net/http"
 	"time"
+
+	"github.com/northmule/shorturl/internal/app/logger"
 )
 
-// idCookieSize размер в байтах места под id пользователя
-const idCookieSize = 4
-const CookieAuthName = "shorturl_session"
-const HMACTokenExp = time.Hour * 600
-const HMACSecretKey = "super_secret_key"
+// Общие константы сервиса
+const (
+	// CookieAuthName название куки авторизации.
+	CookieAuthName = "shorturl_session"
+	// HMACTokenExp время жизни токена.
+	HMACTokenExp = time.Hour * 600
+	// HMACSecretKey секретный ключ генерации токена.
+	HMACSecretKey = "super_secret_key"
+)
 
+// GetUserToken получить токен из запроса.
 func GetUserToken(req *http.Request) string {
 	token := req.Header.Get("Authorization")
 	if token == "" {
@@ -29,6 +35,7 @@ func GetUserToken(req *http.Request) string {
 	return token
 }
 
+// GenerateToken сгенерировать новый токен по параметрам.
 func GenerateToken(userUUID string, exp time.Duration, secretKey string) (string, time.Time) {
 	hashed := hmac.New(sha256.New, []byte(secretKey))
 	hashed.Write([]byte(userUUID))
@@ -37,6 +44,7 @@ func GenerateToken(userUUID string, exp time.Duration, secretKey string) (string
 	return token, tokenExp
 }
 
+// ValidateToken проверка валидности токена.
 func ValidateToken(userUUID string, token string, secretKey string) bool {
 	logger.LogSugar.Infof("Проверка токена %s для пользователя %s", token, userUUID)
 	tokenSign, err := hex.DecodeString(token)

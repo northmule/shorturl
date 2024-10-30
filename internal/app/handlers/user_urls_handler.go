@@ -3,23 +3,26 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"github.com/northmule/shorturl/internal/app/workers"
-	"io"
-	"net/http"
 )
 
+// UserURLsHandler хэндлер отображения ссылок пользователя.
 type UserURLsHandler struct {
-	finder  FinderURLs
-	session *storage.Session
+	finder  URLFinder
+	session storage.SessionAdapter
 	worker  *workers.Worker
 }
 
-func NewUserUrlsHandler(finder FinderURLs, sessionStorage *storage.Session, worker *workers.Worker) *UserURLsHandler {
+// NewUserUrlsHandler Конструктор.
+func NewUserUrlsHandler(finder URLFinder, sessionStorage storage.SessionAdapter, worker *workers.Worker) *UserURLsHandler {
 	instance := UserURLsHandler{
 		finder:  finder,
 		session: sessionStorage,
@@ -28,16 +31,23 @@ func NewUserUrlsHandler(finder FinderURLs, sessionStorage *storage.Session, work
 	return &instance
 }
 
+// ResponseView структура ответа для просмотра.
 type ResponseView struct {
 	ShortURL    string `json:"short_Url"`
 	OriginalURL string `json:"original_url"`
 }
 
-type FinderURLs interface {
+// URLFinder Поиск URL-s по пользователю.
+type URLFinder interface {
 	FindUrlsByUserID(userUUID string) (*[]models.URL, error)
 }
 
-// View коротки ссылки пользователя
+// View коротки ссылки пользователя.
+// @Summary Просмотр коротких ссылок пользователя
+// @Failure 500
+// @Failure 400
+// @Success 200 {object} ResponseView
+// @Router /api/user/urls [get]
 func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	userUUID := u.getUserUUID(res, req)
 	logger.LogSugar.Infof("Получен запрос на просмотр URL для пользователя с uuid: %s", userUUID)
@@ -74,8 +84,15 @@ func (u *UserURLsHandler) View(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// RequestDelete запрос на удаление адресов.
 type RequestDelete []string
 
+// Delete удаление ссылок текущего пользователя.
+// @Summary Удаление ссылок пользователем
+// @Failure 400
+// @Success 202
+// @Param Delete body RequestDelete true "объект с сылками для удаления"
+// @Router /api/user/urls [delete]
 func (u *UserURLsHandler) Delete(res http.ResponseWriter, req *http.Request) {
 	userUUID := u.getUserUUID(res, req)
 	logger.LogSugar.Infof("Получен запрос на удаление для пользователя с uuid: %s", userUUID)

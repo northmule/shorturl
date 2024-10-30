@@ -2,21 +2,28 @@ package handlers
 
 import (
 	"errors"
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/url"
-	"github.com/northmule/shorturl/internal/app/storage"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/url"
+	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/storage/models"
+	"github.com/northmule/shorturl/internal/app/workers"
 )
 
 // TestRedirectHandler тест обработчика для декодирования ссылки
 func TestRedirectHandler(t *testing.T) {
-	_ = logger.NewLogger("fatal")
-	shortURLService := url.NewShortURLService(storage.NewMemoryStorage())
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
 	stop := make(chan struct{})
-	ts := httptest.NewServer(AppRoutes(shortURLService, stop))
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 
 	defer ts.Close()
 
@@ -94,4 +101,56 @@ func TestRedirectHandler(t *testing.T) {
 			}
 		})
 	}
+}
+
+func BenchmarkRedirectHandler(b *testing.B) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
+	sessionStorage := storage.NewSessionStorage()
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), sessionStorage, workers.NewWorker(memoryStorage, stop)).Init())
+	// Отключить переход по ссылке при положительном ответе сервиса
+	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		errorRedirect := errors.New("HTTP redirect blocked")
+		return errorRedirect
+	}
+	defer ts.Close()
+
+	b.Run("короткая_ссылка_не_существует", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			request, err := http.NewRequest(http.MethodGet, ts.URL+"/e98192e19505472476a49f10388428ab", nil)
+			if err != nil {
+				b.Error(err)
+			}
+			b.StartTimer()
+			response, _ := ts.Client().Do(request)
+			response.Body.Close()
+		}
+	})
+
+	b.Run("короткая_ссылка_существует", func(b *testing.B) {
+		shortURL := "e98192e19505472476a49f10388428ab"
+		memoryStorage.Add(models.URL{
+			ShortURL: shortURL,
+			URL:      "https://ya.ru/123",
+		})
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			request, err := http.NewRequest(http.MethodGet, ts.URL+"/"+shortURL, nil)
+			if err != nil {
+				b.Error(err)
+			}
+			b.StartTimer()
+			response, _ := ts.Client().Do(request)
+			response.Body.Close()
+		}
+	})
 }

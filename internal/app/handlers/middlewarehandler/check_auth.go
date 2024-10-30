@@ -3,32 +3,38 @@ package middlewarehandler
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	AppContext "github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/auntificator"
-	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"net/http"
-	"strings"
-	"time"
 )
 
-const defaultUUID = "a4a45d8d-cd8b-47a7-a7a1-4bafcf3d1111"
-
+// CheckAuth структура.
 type CheckAuth struct {
-	storage url.StorageInterface
-	session *storage.Session
+	userCreator UserCreator
+	session     storage.SessionAdapter
 }
 
-func NewCheckAuth(storage url.StorageInterface, session *storage.Session) *CheckAuth {
+// NewCheckAuth конструктор структуры.
+func NewCheckAuth(userCreator UserCreator, session storage.SessionAdapter) *CheckAuth {
 	return &CheckAuth{
-		storage: storage,
-		session: session,
+		userCreator: userCreator,
+		session:     session,
 	}
 }
 
+// UserCreator интерфейс создания пользователей.
+type UserCreator interface {
+	CreateUser(user models.User) (int64, error)
+}
+
+// AccessVerificationUserUrls проверка доступа пользователя.
 func (c *CheckAuth) AccessVerificationUserUrls(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		authorizationToken := auntificator.GetUserToken(req)
@@ -43,7 +49,7 @@ func (c *CheckAuth) AccessVerificationUserUrls(next http.Handler) http.Handler {
 	})
 }
 
-// AuthEveryone выдаст куку
+// AuthEveryone авторизация пользователя.
 func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		authorizationToken := auntificator.GetUserToken(req)
@@ -83,6 +89,7 @@ func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 		next.ServeHTTP(res, reqWithContext)
 	})
 }
+
 func (c *CheckAuth) authorization(res http.ResponseWriter, userUUID string, token string, tokenExp time.Time) http.ResponseWriter {
 	tokenValue := fmt.Sprintf("%s:%s", token, userUUID)
 	http.SetCookie(res, &http.Cookie{
@@ -95,8 +102,9 @@ func (c *CheckAuth) authorization(res http.ResponseWriter, userUUID string, toke
 	res.Header().Set("Authorization", tokenValue)
 	return res
 }
+
 func (c *CheckAuth) createUser(userUUID string) {
-	_, err := c.storage.CreateUser(models.User{
+	_, err := c.userCreator.CreateUser(models.User{
 		Name:     "test_user",
 		UUID:     userUUID,
 		Login:    "test_user" + userUUID,

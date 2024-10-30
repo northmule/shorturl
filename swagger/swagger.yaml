@@ -1,0 +1,142 @@
+definitions:
+  handlers.BatchRequest:
+    properties:
+      correlation_id:
+        type: string
+      original_url:
+        type: string
+    type: object
+  handlers.BatchResponse:
+    properties:
+      correlation_id:
+        type: string
+      short_url:
+        type: string
+    type: object
+  handlers.JSONResponse:
+    properties:
+      result:
+        type: string
+    type: object
+  handlers.ResponseView:
+    properties:
+      original_url:
+        type: string
+      short_Url:
+        type: string
+    type: object
+  handlers.ShortenerRequest:
+    properties:
+      URL:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Сервис сокращения URL
+  title: Shortener API
+  version: "1.0"
+paths:
+  /:
+    post:
+      parameters:
+      - description: оригинальная ссылка для сокращения
+        in: body
+        name: url
+        required: true
+        schema:
+          example: https://ya.ru/1
+          type: string
+      responses:
+        "307":
+          description: origin_url
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+      summary: Получение короткой ссылки
+  /{id}:
+    get:
+      responses:
+        "307":
+          description: origin_url
+          schema:
+            type: string
+        "410":
+          description: Gone
+      summary: Преобразование короткой ссылки в оригинальную с переходом по ссылке
+  /api/shorten:
+    post:
+      parameters:
+      - description: объект с сылками для сокращения
+        in: body
+        name: ShortenerJSONHandler
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ShortenerRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.JSONResponse'
+        "400":
+          description: Bad Request
+      summary: Получение коротких ссылок
+  /api/shorten/batch:
+    post:
+      parameters:
+      - description: объект с сылками для сокращения
+        in: body
+        name: ShortenerBatch
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.BatchRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.BatchResponse'
+        "400":
+          description: Bad Request
+      summary: Получение коротких ссылок
+  /api/user/urls:
+    delete:
+      parameters:
+      - description: объект с сылками для удаления
+        in: body
+        name: Delete
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+      summary: Удаление ссылок пользователем
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ResponseView'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Просмотр коротких ссылок пользователя
+  /ping:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "500":
+          description: Не удалось подключиться к БД
+          schema:
+            type: string
+      summary: Проверка подключения к БД
+swagger: "2.0"

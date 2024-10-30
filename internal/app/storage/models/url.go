@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-// URL Модель данных
+// URL Модель данных.
 type URL struct {
 	ID        uint      `json:"id,omitempty"`
 	ShortURL  string    `json:"short_url"`
