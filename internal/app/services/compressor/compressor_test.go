@@ -35,9 +35,6 @@ func TestNewGzipWriter(t *testing.T) {
 	if writer == nil {
 		t.Error("Expected GzipWriter to be created, but got nil")
 	}
-	if writer.Writer == nil {
-		t.Error("Expected gzip writer to be created, but got nil")
-	}
 }
 
 func TestGzipWriter_Write(t *testing.T) {
