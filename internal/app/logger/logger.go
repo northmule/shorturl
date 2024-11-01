@@ -29,17 +29,19 @@ type LogEntry struct {
 func InitLogger(level string) error {
 	var isError bool
 	var err error
+	var lvl zap.AtomicLevel
+	var appLogger *zap.Logger
 
 	once.Do(
 		func() {
-			lvl, err := zap.ParseAtomicLevel(level)
+			lvl, err = zap.ParseAtomicLevel(level)
 			if err != nil {
 				isError = true
 				return
 			}
 			cfg := zap.NewDevelopmentConfig()
 			cfg.Level = lvl
-			appLogger, err := cfg.Build()
+			appLogger, err = cfg.Build()
 			if err != nil {
 				isError = true
 				return

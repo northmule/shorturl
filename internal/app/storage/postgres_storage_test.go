@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/northmule/shorturl/internal/app/logger"
-	mocks "github.com/northmule/shorturl/internal/app/storage/mock"
+	mocks "github.com/northmule/shorturl/internal/app/storage/mocks"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"go.uber.org/mock/gomock"
 )
