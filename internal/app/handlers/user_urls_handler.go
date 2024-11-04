@@ -30,6 +30,7 @@ func NewUserUrlsHandler(finder URLFinder, sessionStorage storage.SessionAdapter,
 	return &instance
 }
 
+// Deleter Интерфейс удаления ссылок пользователя
 type Deleter interface {
 	Del(userUUID string, input []string)
 }
