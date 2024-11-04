@@ -60,7 +60,7 @@ func TestInitStaticCheck(t *testing.T) {
 }
 
 func TestInitOtherCheck(t *testing.T) {
-	jsonData := []byte(`{"staticcheck": [], "analysis": []}`)
+	jsonData := []byte(`{"staticcheck": [], "analysis": [], "other": ["errcheck", "restrictpkg"]}`)
 	config := NewStaticlintConfig(jsonData)
 	err := config.FilConfig()
 	require.NoError(t, err)
@@ -72,7 +72,7 @@ func TestInitOtherCheck(t *testing.T) {
 }
 
 func TestInitOsExitCheck(t *testing.T) {
-	jsonData := []byte(`{"staticcheck": [], "analysis": []}`)
+	jsonData := []byte(`{"staticcheck": [], "analysis": [], "other": ["osexit"]}`)
 	config := NewStaticlintConfig(jsonData)
 	err := config.FilConfig()
 	require.NoError(t, err)

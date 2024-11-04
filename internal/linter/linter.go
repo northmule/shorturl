@@ -50,6 +50,7 @@ type StaticlintConfig struct {
 type Config struct {
 	Staticcheck []string `json:"staticcheck"`
 	Analysis    []string `json:"analysis"`
+	Other       []string `json:"other"`
 }
 
 // NewStaticlintConfig конструктор
@@ -136,17 +137,27 @@ func (s *StaticlintConfig) InitStaticCheck() []*analysis.Analyzer {
 
 // InitOtherCheck прочие анализаторы по ТЗ
 func (s *StaticlintConfig) InitOtherCheck() []*analysis.Analyzer {
-	mychecks := []*analysis.Analyzer{
-		errcheck.Analyzer,
-		restrictpkg.RestrictPackageAnalyzer,
+	checks := make([]*analysis.Analyzer, 0)
+	for _, v := range s.cfg.Other {
+		if v == "errcheck" {
+			checks = append(checks, errcheck.Analyzer)
+		}
+		if v == "restrictpkg" {
+			checks = append(checks, restrictpkg.RestrictPackageAnalyzer)
+		}
 	}
-	return mychecks
+
+	return checks
 }
 
 // InitOsExitCheck поис вызова os.Exit в main
 func (s *StaticlintConfig) InitOsExitCheck() []*analysis.Analyzer {
-	mychecks := []*analysis.Analyzer{
-		OsExitCheck,
+	checks := make([]*analysis.Analyzer, 0)
+	for _, v := range s.cfg.Other {
+		if v == "osexit" {
+			checks = append(checks, OsExitCheck)
+		}
 	}
-	return mychecks
+
+	return checks
 }

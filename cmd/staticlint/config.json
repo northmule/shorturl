@@ -72,5 +72,10 @@
     "unreachable",
     "unsafeptr",
     "unusedresult"
+  ],
+  "other": [
+    "errcheck",
+    "restrictpkg",
+    "osexit"
   ]
 }
