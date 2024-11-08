@@ -11,24 +11,28 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
-	"github.com/northmule/shorturl/internal/app/workers"
 )
 
 // UserURLsHandler хэндлер отображения ссылок пользователя.
 type UserURLsHandler struct {
 	finder  URLFinder
 	session storage.SessionAdapter
-	worker  *workers.Worker
+	worker  Deleter
 }
 
 // NewUserUrlsHandler Конструктор.
-func NewUserUrlsHandler(finder URLFinder, sessionStorage storage.SessionAdapter, worker *workers.Worker) *UserURLsHandler {
+func NewUserUrlsHandler(finder URLFinder, sessionStorage storage.SessionAdapter, worker Deleter) *UserURLsHandler {
 	instance := UserURLsHandler{
 		finder:  finder,
 		session: sessionStorage,
 		worker:  worker,
 	}
 	return &instance
+}
+
+// Deleter Интерфейс удаления ссылок пользователя
+type Deleter interface {
+	Del(userUUID string, input []string)
 }
 
 // ResponseView структура ответа для просмотра.

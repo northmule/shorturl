@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,11 +23,18 @@ import (
 	"github.com/northmule/shorturl/internal/app/workers"
 )
 
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+)
+
 // @Title Shortener API
 // @Description Сервис сокращения URL
 // @Version 1.0
 // @host      localhost:8080
 func main() {
+	printLabel()
 	appCtx, appStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer appStop()
 	if err := run(appCtx); err != nil {
@@ -128,4 +137,27 @@ func getStorage(ctx context.Context, cfg *config.Config) (appStorage.StorageQuer
 	}
 
 	return appStorage.NewMemoryStorage(), nil
+}
+
+func printLabel() {
+	template := `
+	Build version: <buildVersion>
+	Build date: <buildDate>
+	Build commit: <buildCommit>
+`
+	if buildVersion == "" {
+		buildVersion = "N/A"
+	}
+	if buildDate == "" {
+		buildDate = "N/A"
+	}
+
+	if buildCommit == "" {
+		buildCommit = "N/A"
+	}
+	template = strings.Replace(template, "<buildVersion>", buildVersion, 1)
+	template = strings.Replace(template, "<buildDate>", buildDate, 1)
+	template = strings.Replace(template, "<buildCommit>", buildCommit, 1)
+
+	fmt.Println(template)
 }

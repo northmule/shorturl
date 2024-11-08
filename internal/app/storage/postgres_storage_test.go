@@ -3,10 +3,11 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/northmule/shorturl/internal/app/logger"
-	mocks "github.com/northmule/shorturl/internal/app/storage/mock"
+	mocks "github.com/northmule/shorturl/internal/app/storage/mocks"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"go.uber.org/mock/gomock"
 )
@@ -88,6 +89,9 @@ func TestPostgresStorage_Ping(t *testing.T) {
 		m := mocks.NewMockDBQuery(ctrl)
 		m.EXPECT().PingContext(gomock.Any()).Return(nil)
 		storage := PostgresStorage{DB: m}
-		storage.Ping()
+		err := storage.Ping()
+		if err != nil {
+			fmt.Println(err)
+		}
 	})
 }

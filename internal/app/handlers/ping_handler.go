@@ -36,6 +36,9 @@ func (p *PingHandler) CheckStorageConnect(res http.ResponseWriter, req *http.Req
 		logger.LogSugar.Errorf("CheckStorageConnect Не удалось подключиться к БД %s", err)
 		return
 	}
-	res.Write([]byte("Ok"))
+	_, err = res.Write([]byte("Ok"))
+	if err != nil {
+		logger.LogSugar.Error(err)
+	}
 	res.WriteHeader(http.StatusOK)
 }

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -23,6 +24,14 @@ func (m *MockFinder) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	return args.Get(0).(*[]models.URL), args.Error(1)
 }
 
+type MockDeleter struct {
+	mock.Mock
+	IsDeleted bool
+}
+
+func (w *MockDeleter) Del(userUUID string, input []string) {
+	w.IsDeleted = true
+}
 func TestView(t *testing.T) {
 	_ = logger.InitLogger("fatal")
 	mockFinder := new(MockFinder)
@@ -84,5 +93,38 @@ func BenchmarkView(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		handler.View(res, req)
+	}
+}
+
+func TestUserURLsHandler_Delete(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	deleter := new(MockDeleter)
+	handler := &UserURLsHandler{
+		worker: deleter,
+	}
+
+	requestBody := RequestDelete{"short1", "short2"}
+	requestBodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("DELETE", "/api/user/urls", bytes.NewBuffer(requestBodyBytes))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+	userUUID := "user123"
+	req = req.WithContext(context.WithValue(req.Context(), AppContext.KeyContext, userUUID))
+
+	handler.Delete(res, req)
+
+	if res.Code != http.StatusAccepted {
+		t.Errorf("Expected status code %d, but got %d", http.StatusAccepted, res.Code)
+	}
+
+	if !deleter.IsDeleted {
+		t.Error("Deleter should be marked as deleted")
 	}
 }
