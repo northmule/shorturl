@@ -1,12 +1,12 @@
 package config
 
 import (
+	"errors"
 	"flag"
 	"os"
 	"strings"
 
 	"github.com/caarlos0/env"
-	"github.com/northmule/shorturl/internal/app/logger"
 )
 
 // Приоритет параметров сервера должен быть таким:
@@ -21,6 +21,7 @@ const (
 	pathFileStorage           = "/tmp/short-url-db.json"
 	DataBaseConnectionTimeOut = 10000
 	pprofEnabledDefault       = true
+	enableHTTPSDefault        = false
 )
 
 // Config Конфигурация приложения.
@@ -33,8 +34,11 @@ type Config struct {
 	// Путь для хранения ссылок
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	// Строка подключения к БД
-	DataBaseDsn  string `env:"DATABASE_DSN"`
-	PprofEnabled bool   `env:"PPROF_ENABLED"`
+	DataBaseDsn string `env:"DATABASE_DSN"`
+	// Аткивация pprof
+	PprofEnabled bool `env:"PPROF_ENABLED"`
+	// Запуск сервера https
+	EnableHTTPS bool `env:"ENABLE_HTTPS"`
 }
 
 // InitConfig инициализация настроек приложения.
@@ -91,11 +95,10 @@ func initFlagConfig(appConfig *Config) error {
 	// Строка подключения базы данных
 	flagDataBaseDsn := configFlag.String("d", "", "specify the connection string to the database")
 	pprofEnabled := configFlag.Bool("pprof", pprofEnabledDefault, "enable pprof")
-
+	enableHTTPS := configFlag.Bool("s", enableHTTPSDefault, "launching the https server")
 	err := configFlag.Parse(os.Args[1:])
 	if err != nil {
-		logger.LogSugar.Error("configFlag.Parse error", err)
-		return err
+		return errors.Join(errors.New("failed to parse flags"), err)
 	}
 
 	if appConfig.ServerURL == "" {
@@ -112,6 +115,7 @@ func initFlagConfig(appConfig *Config) error {
 
 	}
 	appConfig.PprofEnabled = *pprofEnabled
+	appConfig.EnableHTTPS = *enableHTTPS
 
 	appConfig.DataBaseDsn = strings.ReplaceAll(appConfig.DataBaseDsn, "\"", "")
 	return nil
