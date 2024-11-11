@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAFlagAndBFlag(t *testing.T) {
@@ -96,4 +98,77 @@ func TestAFlagAndBFlag(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInitJSONConfig(t *testing.T) {
+	jsonConfig := `{
+		"server_address": "localhost:8080",
+		"base_url": "http://localhost:8080",
+		"file_storage_path": "/tmp/storage",
+		"database_dsn": "/dbname",
+		"enable_https": true
+	}`
+	jsonFile, err := os.CreateTemp("", "config.json")
+	assert.NoError(t, err)
+	defer os.Remove(jsonFile.Name())
+
+	_, err = jsonFile.WriteString(jsonConfig)
+	assert.NoError(t, err)
+	err = jsonFile.Close()
+	assert.NoError(t, err)
+
+	var config Config
+
+	config.Config = jsonFile.Name()
+	err = config.InitJSONConfig()
+	if err != nil {
+		return
+	}
+	assert.Equal(t, "localhost:8080", config.ServerURL)
+	assert.Equal(t, "http://localhost:8080", config.BaseShortURL)
+	assert.Equal(t, "/tmp/storage", config.FileStoragePath)
+	assert.Equal(t, "/dbname", config.DataBaseDsn)
+	assert.True(t, config.EnableHTTPS)
+	assert.Equal(t, jsonFile.Name(), config.Config)
+}
+
+func TestNewConfig(t *testing.T) {
+
+	_ = os.Setenv("SERVER_ADDRESS", "mocked_address")
+	_ = os.Setenv("BASE_URL", "mocked_base_url")
+	_ = os.Setenv("FILE_STORAGE_PATH", "mocked_file_path")
+	_ = os.Setenv("DATABASE_DSN", "mocked_db_dsn")
+	_ = os.Setenv("PPROF_ENABLED", "true")
+	_ = os.Setenv("ENABLE_HTTPS", "true")
+
+	jsonFile, err := os.CreateTemp("", "config.json")
+	assert.NoError(t, err)
+
+	_ = os.Setenv("CONFIG", jsonFile.Name())
+	defer os.Remove(jsonFile.Name())
+
+	os.Args = []string{"cmd", "-a", "mocked_address_cmd", "-b", "mocked_base_url_cmd", "-f", "mocked_file_path_cmd", "-d", "mocked_db_dsn_cmd", "-pprof", "-s"}
+
+	jsonConfig := `{
+		"server_address": "localhost:8080",
+		"base_url": "http://localhost:8080",
+		"file_storage_path": "/tmp/storage",
+		"database_dsn": "/dbname",
+		"enable_https": true
+	}`
+
+	_, err = jsonFile.WriteString(jsonConfig)
+	assert.NoError(t, err)
+	err = jsonFile.Close()
+	assert.NoError(t, err)
+
+	config, err := NewConfig()
+	assert.NoError(t, err)
+	assert.Equal(t, "mocked_address", config.ServerURL)
+	assert.Equal(t, "mocked_base_url", config.BaseShortURL)
+	assert.Equal(t, "mocked_file_path", config.FileStoragePath)
+	assert.Equal(t, "mocked_db_dsn", config.DataBaseDsn)
+	assert.True(t, config.PprofEnabled)
+	assert.True(t, config.EnableHTTPS)
+	assert.Equal(t, jsonFile.Name(), config.Config)
 }
