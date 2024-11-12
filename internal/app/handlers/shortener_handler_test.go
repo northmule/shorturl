@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +18,17 @@ import (
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"github.com/northmule/shorturl/internal/app/workers"
 )
+
+// errorReader — для проверки ошибок чтения body
+type errorReader struct{}
+
+func (e *errorReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("ошибка чтения")
+}
+
+func (e *errorReader) Close() error {
+	return nil
+}
 
 // TestShortenerHandler тест обработчика для декодирования ссылки
 func TestShortenerHandler(t *testing.T) {
@@ -104,6 +116,33 @@ func TestShortenerHandler(t *testing.T) {
 				t.Error("URL не найден")
 			}
 		})
+	}
+}
+
+func TestShortenerHandler_StatusBadRequest_BadBody(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	defer ts.Close()
+
+	h := NewShortenerHandler(shortURLService, memoryStorage, memoryStorage)
+
+	errBody := io.NopCloser(&errorReader{})
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", errBody)
+	if err != nil {
+		t.Error(err)
+	}
+	res := httptest.NewRecorder()
+
+	h.ShortenerHandler(res, req)
+	if http.StatusBadRequest != res.Code {
+		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusBadRequest, res.Code)
 	}
 }
 

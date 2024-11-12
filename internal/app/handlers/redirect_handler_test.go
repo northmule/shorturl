@@ -103,6 +103,70 @@ func TestRedirectHandler(t *testing.T) {
 	}
 }
 
+func TestRedirectHandler_StatusGone(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	defer ts.Close()
+	// необходимые данные
+	identy, _ := memoryStorage.Add(models.URL{
+		ShortURL: "ttt",
+		URL:      "https://ya.ru",
+	})
+	_, _ = memoryStorage.CreateUser(models.User{
+		UUID: "1111-2222-3333",
+	})
+	_ = memoryStorage.LikeURLToUser(identy, "1111-2222-3333")
+	_ = memoryStorage.SoftDeletedShortURL("1111-2222-3333", "ttt")
+
+	request, err := http.NewRequest(http.MethodGet, ts.URL+"/ttt", nil)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	response, err := ts.Client().Do(request)
+	if err != nil {
+		t.Error(err)
+	}
+	defer response.Body.Close()
+
+	if http.StatusGone != response.StatusCode {
+		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusGone, response.StatusCode)
+	}
+
+}
+
+func TestRedirectHandler_StatusBadRequest(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, storage.NewMemoryStorage(), storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	defer ts.Close()
+
+	req, err := http.NewRequest(http.MethodGet, ts.URL+"/", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	res := httptest.NewRecorder()
+	h := NewRedirectHandler(shortURLService)
+	h.RedirectHandler(res, req)
+
+	if http.StatusBadRequest != res.Code {
+		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusBadRequest, res.Code)
+	}
+
+}
+
 func BenchmarkRedirectHandler(b *testing.B) {
 	_ = logger.InitLogger("fatal")
 	memoryStorage := storage.NewMemoryStorage()
