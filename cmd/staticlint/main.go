@@ -28,10 +28,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	analysisList = append(analysisList, lint.InitAnalysis()...)
-	analysisList = append(analysisList, lint.InitStaticCheck()...)
-	analysisList = append(analysisList, lint.InitOtherCheck()...)
-	analysisList = append(analysisList, lint.InitOsExitCheck()...)
+	checkFunctions := []func() []*analysis.Analyzer{
+		lint.InitAnalysis,
+		lint.InitStaticCheck,
+		lint.InitOtherCheck,
+		lint.InitOsExitCheck,
+	}
+
+	for _, checkFunc := range checkFunctions {
+		analysisList = append(analysisList, checkFunc()...)
+	}
 
 	multichecker.Main(
 		analysisList...,
