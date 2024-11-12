@@ -37,7 +37,7 @@ var (
 // @host      localhost:8080
 func main() {
 	printLabel()
-	appCtx, appStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	appCtx, appStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer appStop()
 	if err := run(appCtx); err != nil {
 		log.Fatal(err)
@@ -97,7 +97,6 @@ func run(ctx context.Context) error {
 	}()
 
 	if cfg.EnableHTTPS {
-		logger.LogSugar.Infof("Running server TLS on - %s", cfg.ServerURL)
 
 		httpServer.TLSConfig = &tls.Config{
 			MinVersion: tls.VersionTLS13,
@@ -113,6 +112,7 @@ func run(ctx context.Context) error {
 			return err
 		}
 		logger.LogSugar.Infof("Сертификат: %s, ключ: %s созданы", certService.CertPath(), certService.KeyPath())
+		logger.LogSugar.Infof("Running server TLS on - %s", cfg.ServerURL)
 		err = httpServer.ListenAndServeTLS(certService.CertPath(), certService.KeyPath())
 	} else {
 		logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)

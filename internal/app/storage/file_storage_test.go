@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -150,4 +151,50 @@ func TestFileStorage_Add(t *testing.T) {
 		}
 	})
 
+}
+
+func TestCreateUser(t *testing.T) {
+
+	tempFile, err := os.CreateTemp("", "test-storage-*.json")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	storage := NewFileStorage(tempFile)
+	if storage == nil {
+		t.Fatalf("Failed to initialize FileStorage")
+	}
+	defer storage.Close()
+
+	user := models.User{
+		Login: "testuser",
+		UUID:  "testuuid",
+	}
+
+	_, err = storage.CreateUser(user)
+	if err != nil {
+		t.Errorf("CreateUser returned an error: %v", err)
+	}
+
+	tempFile.Close()
+	tempFile, err = os.Open(tempFile.Name() + "user.json")
+	if err != nil {
+		t.Fatalf("Failed to open user file: %v", err)
+	}
+	defer tempFile.Close()
+
+	scanner := bufio.NewScanner(tempFile)
+	if !scanner.Scan() {
+		t.Fatalf("Expected at least one line in the user file")
+	}
+	line := scanner.Text()
+	var storedUser models.User
+	err = json.Unmarshal([]byte(line), &storedUser)
+	if err != nil {
+		t.Errorf("Failed to unmarshal user data: %v", err)
+	}
+	if storedUser.Login != user.Login || storedUser.UUID != user.UUID {
+		t.Errorf("Stored user data does not match expected data")
+	}
 }

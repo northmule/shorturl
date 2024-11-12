@@ -14,6 +14,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
+	"github.com/northmule/shorturl/internal/app/storage/models"
 	"github.com/northmule/shorturl/internal/app/workers"
 )
 
@@ -431,4 +432,30 @@ func BenchmarkShortenerBatch(b *testing.B) {
 		}
 
 	}
+}
+
+func TestFillShortURLAndResponseStatus(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(memoryStorage, memoryStorage)
+
+	handler := &ShortenerHandler{
+		service: shortURLService,
+		finder:  memoryStorage,
+		setter:  memoryStorage,
+	}
+
+	t.Run("new_url", func(t *testing.T) {
+		expectedURL := "https://ya.ru"
+		expectedShortURL := "short123"
+		_, _ = memoryStorage.Add(models.URL{ShortURL: expectedShortURL, URL: expectedURL})
+
+		_, status, err := handler.fillShortURLAndResponseStatus("", expectedURL)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if status != http.StatusCreated {
+			t.Errorf("Expected status to be %d, got %d", http.StatusCreated, status)
+		}
+	})
 }
