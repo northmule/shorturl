@@ -164,7 +164,6 @@ func TestRedirectHandler_StatusBadRequest(t *testing.T) {
 	if http.StatusBadRequest != res.Code {
 		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusBadRequest, res.Code)
 	}
-
 }
 
 func BenchmarkRedirectHandler(b *testing.B) {

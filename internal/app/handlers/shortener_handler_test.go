@@ -77,7 +77,7 @@ func TestShortenerHandler(t *testing.T) {
 		{
 			name: "#3_короткая_ссылка_создаётся",
 			request: request{
-				body: "https://ya.ru",
+				body: "https://ya.ru/map1",
 			},
 			want: want{
 				code:    http.StatusCreated,
@@ -217,7 +217,7 @@ func TestShortenerJsonHandler(t *testing.T) {
 		{
 			name: "#3_короткая_ссылка_создаётся",
 			request: request{
-				body: `{"url":"https://ya.ru"}`,
+				body: `{"url":"https://ya.ru/map2"}`,
 			},
 			want: want{
 				code:    http.StatusCreated,
@@ -262,6 +262,164 @@ func TestShortenerJsonHandler(t *testing.T) {
 				t.Error("URL не найден")
 			}
 		})
+	}
+}
+
+func TestShortenerJsonHandler_StatusBadRequest_BadBody(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	defer ts.Close()
+
+	h := NewShortenerHandler(shortURLService, memoryStorage, memoryStorage)
+
+	errBody := io.NopCloser(&errorReader{})
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", errBody)
+	if err != nil {
+		t.Error(err)
+	}
+	res := httptest.NewRecorder()
+
+	h.ShortenerJSONHandler(res, req)
+	if http.StatusBadRequest != res.Code {
+		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusBadRequest, res.Code)
+	}
+}
+
+func TestShortenerJsonHandler_StatusBadRequest_BadJson(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	defer ts.Close()
+
+	h := NewShortenerHandler(shortURLService, memoryStorage, memoryStorage)
+
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBufferString("[]"))
+	if err != nil {
+		t.Error(err)
+	}
+	res := httptest.NewRecorder()
+
+	h.ShortenerJSONHandler(res, req)
+	if http.StatusBadRequest != res.Code {
+		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusBadRequest, res.Code)
+	}
+}
+
+func TestShortenerJsonHandler_StatusBadRequest_BadURL(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	defer ts.Close()
+
+	h := NewShortenerHandler(shortURLService, memoryStorage, memoryStorage)
+
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBufferString("{\"URL\":\"ftp://\"}"))
+	if err != nil {
+		t.Error(err)
+	}
+	res := httptest.NewRecorder()
+
+	h.ShortenerJSONHandler(res, req)
+	if http.StatusBadRequest != res.Code {
+		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusBadRequest, res.Code)
+	}
+}
+
+func TestShortenerBatch_StatusBadRequest_BadBody(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	defer ts.Close()
+
+	h := NewShortenerHandler(shortURLService, memoryStorage, memoryStorage)
+
+	errBody := io.NopCloser(&errorReader{})
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", errBody)
+	if err != nil {
+		t.Error(err)
+	}
+	res := httptest.NewRecorder()
+
+	h.ShortenerBatch(res, req)
+	if http.StatusBadRequest != res.Code {
+		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusBadRequest, res.Code)
+	}
+}
+
+func TestShortenerBatch_StatusBadRequest_BadJson(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	defer ts.Close()
+
+	h := NewShortenerHandler(shortURLService, memoryStorage, memoryStorage)
+
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBufferString("{\"bad\":\"ftp://\"}"))
+	if err != nil {
+		t.Error(err)
+	}
+	res := httptest.NewRecorder()
+
+	h.ShortenerBatch(res, req)
+	if http.StatusBadRequest != res.Code {
+		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusBadRequest, res.Code)
+	}
+}
+
+func TestShortenerBatch_StatusBadRequest_BadURLs(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	stor := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(stor, stor)
+	stop := make(chan struct{})
+	defer func() {
+		stop <- struct{}{}
+	}()
+	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	defer ts.Close()
+
+	h := NewShortenerHandler(shortURLService, memoryStorage, memoryStorage)
+
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBufferString(`[{"correlation_id":"1","original_url":"sftp://ya.ru"}]`))
+	if err != nil {
+		t.Error(err)
+	}
+	res := httptest.NewRecorder()
+
+	h.ShortenerBatch(res, req)
+	if http.StatusBadRequest != res.Code {
+		t.Errorf("Не верный код ответа сервера. Ожидается %#v пришло %#v", http.StatusBadRequest, res.Code)
 	}
 }
 
@@ -485,9 +643,7 @@ func TestFillShortURLAndResponseStatus(t *testing.T) {
 	}
 
 	t.Run("new_url", func(t *testing.T) {
-		expectedURL := "https://ya.ru"
-		expectedShortURL := "short123"
-		_, _ = memoryStorage.Add(models.URL{ShortURL: expectedShortURL, URL: expectedURL})
+		expectedURL := "https://ya.ru/map"
 
 		_, status, err := handler.fillShortURLAndResponseStatus("", expectedURL)
 		if err != nil {
@@ -495,6 +651,22 @@ func TestFillShortURLAndResponseStatus(t *testing.T) {
 		}
 		if status != http.StatusCreated {
 			t.Errorf("Expected status to be %d, got %d", http.StatusCreated, status)
+		}
+	})
+	t.Run("url_exists", func(t *testing.T) {
+		expectedURL := "https://ya.ru/hello"
+		expectedShortURL := "short123"
+		_, _ = memoryStorage.Add(models.URL{ShortURL: expectedShortURL, URL: expectedURL})
+
+		actualShortURL, status, err := handler.fillShortURLAndResponseStatus("", expectedURL)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if actualShortURL != expectedShortURL {
+			t.Errorf("Expected %s, got %s", expectedShortURL, actualShortURL)
+		}
+		if status != http.StatusConflict {
+			t.Errorf("Expected status to be %d, got %d", http.StatusConflict, status)
 		}
 	})
 }

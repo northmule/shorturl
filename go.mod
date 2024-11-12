@@ -3,6 +3,7 @@ module github.com/northmule/shorturl
 go 1.22.7
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/cybozu-go/golang-custom-analyzer v0.1.2
 	github.com/go-chi/chi/v5 v5.1.0
@@ -39,7 +40,6 @@ require (
 	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect
 	golang.org/x/mod v0.18.0 // indirect
-	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

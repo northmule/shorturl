@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
@@ -48,6 +50,13 @@ func (s *MemoryStorage) Add(url models.URL) (int64, error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	data := *s.db
+	if _, ok := data[url.ShortURL]; ok {
+		duplicateKeyError := pgconn.PgError{
+			Code: CodeErrorDuplicateKey,
+		}
+		err := errors.New("short url already exists")
+		return 0, errors.Join(err, &duplicateKeyError)
+	}
 	s.lastIDForURL++
 	url.ID = s.lastIDForURL
 	data[url.ShortURL] = url

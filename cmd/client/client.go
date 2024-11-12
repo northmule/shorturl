@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 )
@@ -30,16 +29,16 @@ func ClientApp(params Params) (*http.Response, error) {
 	request := params.Request
 	isStdin := false
 	if params.Request == nil {
-		data := url.Values{}
+		// data := url.Values{}
 		log.Println("Введите длинный URL")
 		reader := bufio.NewReader(os.Stdin)
 		long, err := reader.ReadString('\n')
 		if err != nil {
 			return nil, err
 		}
-		long = strings.TrimSuffix(long, "\n")
-		data.Set("url", long)
-		request, err = http.NewRequest(http.MethodPost, endpoint, strings.NewReader(data.Encode()))
+		inputURL := strings.TrimSuffix(long, "\n")
+		// data.Set("url", long)
+		request, err = http.NewRequest(http.MethodPost, endpoint, strings.NewReader(inputURL))
 		if err != nil {
 			return nil, err
 		}

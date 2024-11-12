@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -169,6 +170,7 @@ func (p *PostgresStorage) Ping() error {
 
 // MultiAdd Вставка значений в бд пачками.
 func (p *PostgresStorage) MultiAdd(urls []models.URL) error {
+	var err error
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
 	tx, err := p.DB.Begin()
@@ -181,14 +183,10 @@ func (p *PostgresStorage) MultiAdd(urls []models.URL) error {
 		return err
 	}
 	for _, url := range urls {
-		_, err := prepareInsert.ExecContext(ctx, url.ShortURL, url.URL)
+		_, err = prepareInsert.ExecContext(ctx, url.ShortURL, url.URL)
 		if err != nil {
 			logger.LogSugar.Errorf("Значение %#v не добавлено в таблицу url_list", url)
-			errR := tx.Rollback()
-			if errR != nil {
-				logger.LogSugar.Errorf("откат транзакции вызвал сбой: %s", errR)
-			}
-			return err
+			return errors.Join(err, tx.Rollback())
 		}
 	}
 	err = tx.Commit()
@@ -200,6 +198,7 @@ func (p *PostgresStorage) MultiAdd(urls []models.URL) error {
 
 // FindUserByLoginAndPasswordHash Поиск пользователя.
 func (p *PostgresStorage) FindUserByLoginAndPasswordHash(login string, passwordHash string) (*models.User, error) {
+	var err error
 	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
 	defer cancel()
 	rows, err := p.DB.QueryContext(
@@ -219,7 +218,7 @@ func (p *PostgresStorage) FindUserByLoginAndPasswordHash(login string, passwordH
 	}
 	user := models.User{}
 	if rows.Next() {
-		err := rows.Scan(&user.ID, &user.Name, &user.Login, &user.Password)
+		err = rows.Scan(&user.ID, &user.Name, &user.Login, &user.Password)
 		if err != nil {
 			logger.LogSugar.Errorf("При обработке значений в FindUserByLoginAndPasswordHash(%s) произошла ошибка %s", login, err)
 			return nil, err
