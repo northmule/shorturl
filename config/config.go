@@ -43,6 +43,20 @@ type Config struct {
 	Config string `env:"CONFIG"`
 }
 
+// ConfigurationFile Структура файла конфигурацииы
+type ConfigurationFile struct {
+	// ServerAddress аналог переменной окружения SERVER_ADDRESS или флага -a
+	ServerAddress string `json:"server_address"`
+	// BaseURL аналог переменной окружения BASE_URL или флага -b
+	BaseURL string `json:"base_url"`
+	// FileStoragePath аналог переменной окружения FILE_STORAGE_PATH или флага -f
+	FileStoragePath string `json:"file_storage_path"`
+	// DatabaseDSN аналог переменной окружения DATABASE_DSN или флага -d
+	DatabaseDSN string `json:"database_dsn"`
+	// EnableHTTPS аналог переменной окружения ENABLE_HTTPS или флага -s
+	EnableHTTPS bool `json:"enable_https"`
+}
+
 // InitConfig инициализация настроек приложения.
 type InitConfig interface {
 	InitEnvConfig() error

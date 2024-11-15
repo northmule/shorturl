@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -117,19 +118,24 @@ func TestInitJSONConfig(t *testing.T) {
 	err = jsonFile.Close()
 	assert.NoError(t, err)
 
-	var config Config
+	var actualConfig Config
 
-	config.Config = jsonFile.Name()
-	err = config.InitJSONConfig()
-	if err != nil {
-		return
+	actualConfig.Config = jsonFile.Name()
+	err = actualConfig.InitJSONConfig()
+
+	assert.NoError(t, err)
+
+	wantConfig := Config{
+		ServerURL:       "localhost:8080",
+		BaseShortURL:    "http://localhost:8080",
+		FileStoragePath: "/tmp/storage",
+		DataBaseDsn:     "/dbname",
+		EnableHTTPS:     true,
+		Config:          jsonFile.Name(),
 	}
-	assert.Equal(t, "localhost:8080", config.ServerURL)
-	assert.Equal(t, "http://localhost:8080", config.BaseShortURL)
-	assert.Equal(t, "/tmp/storage", config.FileStoragePath)
-	assert.Equal(t, "/dbname", config.DataBaseDsn)
-	assert.True(t, config.EnableHTTPS)
-	assert.Equal(t, jsonFile.Name(), config.Config)
+	if diff := cmp.Diff(wantConfig, actualConfig); diff != "" {
+		t.Errorf("Config mismatch (-expected +got):\n%s", diff)
+	}
 }
 
 func TestNewConfig(t *testing.T) {
