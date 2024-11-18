@@ -168,13 +168,18 @@ func TestNewConfig(t *testing.T) {
 	err = jsonFile.Close()
 	assert.NoError(t, err)
 
-	config, err := NewConfig()
-	assert.NoError(t, err)
-	assert.Equal(t, "mocked_address", config.ServerURL)
-	assert.Equal(t, "mocked_base_url", config.BaseShortURL)
-	assert.Equal(t, "mocked_file_path", config.FileStoragePath)
-	assert.Equal(t, "mocked_db_dsn", config.DataBaseDsn)
-	assert.True(t, config.PprofEnabled)
-	assert.True(t, config.EnableHTTPS)
-	assert.Equal(t, jsonFile.Name(), config.Config)
+	actualConfig, err := NewConfig()
+
+	wantConfig := &Config{
+		ServerURL:       "mocked_address",
+		BaseShortURL:    "mocked_base_url",
+		FileStoragePath: "mocked_file_path",
+		DataBaseDsn:     "mocked_db_dsn",
+		PprofEnabled:    true,
+		EnableHTTPS:     true,
+		Config:          jsonFile.Name(),
+	}
+	if diff := cmp.Diff(wantConfig, actualConfig); diff != "" {
+		t.Errorf("Config mismatch (-expected +got):\n%s", diff)
+	}
 }
