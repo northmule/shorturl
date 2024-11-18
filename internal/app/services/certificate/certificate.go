@@ -2,11 +2,7 @@ package certificate
 
 import (
 	"crypto"
-	"crypto/ecdsa"
-	"crypto/ed25519"
-	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -20,56 +16,36 @@ import (
 
 // Certificate сервис сертификата
 type Certificate struct {
-	keyPath    string
-	certPath   string
-	privateKey crypto.Signer
+	generator KeyGenerator
+	keyPath   string
+	certPath  string
+}
+
+// KeyGenerator интерфейс получения получение crypto.Signer
+type KeyGenerator interface {
+	GenerateKey() (crypto.Signer, error)
 }
 
 // NewCertificate конструктор
-func NewCertificate() *Certificate {
+func NewCertificate(generator KeyGenerator) *Certificate {
 	tmpPath := os.TempDir()
 	return &Certificate{
-		keyPath:  path.Join(tmpPath, "key.pem"),
-		certPath: path.Join(tmpPath, "cert.pem"),
+		generator: generator,
+		keyPath:   path.Join(tmpPath, "key.pem"),
+		certPath:  path.Join(tmpPath, "cert.pem"),
 	}
-}
-
-// SetPrivateKey установка алгоритма шифрования
-func (c *Certificate) SetPrivateKey(algo string) error {
-	var err error
-	var key crypto.Signer
-	switch algo {
-	case "rsa":
-		key, err = rsa.GenerateKey(rand.Reader, 4096)
-
-	case "ecdsa":
-		key, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-
-	case "ed25519":
-		_, key, err = ed25519.GenerateKey(rand.Reader)
-
-	default:
-		return errors.New("ожидаются: rsa | ecdsa | ed25519")
-
-	}
-
-	if err != nil {
-		return err
-	}
-	c.privateKey = key
-
-	return nil
 }
 
 // InitSelfSigned создаёт ключ и сертификат для TLS сервера
 func (c *Certificate) InitSelfSigned() error {
 	var err error
-
-	if c.privateKey == nil {
-		return errors.New("first you need to call SetPrivateKey(algo)")
+	privateKey, err := c.generator.GenerateKey()
+	if err != nil {
+		return err
 	}
-
-	privateKey := c.privateKey
+	if privateKey == nil {
+		return errors.New("GenerateKey empty")
+	}
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	// серийный номер сертификата
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)

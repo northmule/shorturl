@@ -1,172 +1,116 @@
 package certificate
 
 import (
+	"crypto"
+	"errors"
 	"os"
 	"testing"
+
+	"github.com/northmule/shorturl/internal/app/services/certificate/signers"
 )
 
-func TestInitSelfSigned_rsa(t *testing.T) {
-	var err error
-	c := NewCertificate()
-	err = c.SetPrivateKey("rsa")
-	if err != nil {
-		t.Fatalf("SetPrivateKey(rsa) error = %v", err)
-	}
+// BadSigner реализация с ошибкой
+type BadSigner struct {
+}
 
-	err = c.InitSelfSigned()
-	if err != nil {
-		t.Fatalf("InitSelfSigned() error = %v", err)
-	}
+// GenerateKey метод возвращает ошибку
+func (b *BadSigner) GenerateKey() (crypto.Signer, error) {
+	return nil, errors.New("GenerateKey error")
+}
 
-	_, err = os.Stat(c.CertPath())
-	if os.IsNotExist(err) {
-		t.Errorf("Cert file does not exist")
+func TestInitSelfSigned(t *testing.T) {
+	tests := []struct {
+		name   string
+		signer KeyGenerator
+	}{
+		{
+			name:   "Rsa",
+			signer: signers.NewRsaSigner(),
+		},
+		{
+			name:   "Ecdsa",
+			signer: signers.NewEcdsaSigner(),
+		},
+		{
+			name:   "Ed25519",
+			signer: signers.NewEd25519Signer(),
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var err error
+			c := NewCertificate(tt.signer)
 
-	_, err = os.Stat(c.KeyPath())
-	if os.IsNotExist(err) {
-		t.Errorf("Key file does not exist")
-	}
+			err = c.InitSelfSigned()
+			if err != nil {
+				t.Fatalf("InitSelfSigned() error = %v", err)
+			}
 
-	err = os.Remove(c.CertPath())
-	if err != nil {
-		return
-	}
-	err = os.Remove(c.KeyPath())
-	if err != nil {
-		t.Fatal("os.Remove")
+			_, err = os.Stat(c.CertPath())
+			if os.IsNotExist(err) {
+				t.Errorf("Cert file does not exist")
+			}
+
+			_, err = os.Stat(c.KeyPath())
+			if os.IsNotExist(err) {
+				t.Errorf("Key file does not exist")
+			}
+
+			err = os.Remove(c.CertPath())
+			if err != nil {
+				return
+			}
+			err = os.Remove(c.KeyPath())
+			if err != nil {
+				t.Fatal("os.Remove")
+			}
+		})
 	}
 }
 
-func TestInitSelfSigned_ecdsa(t *testing.T) {
+func TestInitSelfSigned_BadSigner(t *testing.T) {
 	var err error
-	c := NewCertificate()
-	err = c.SetPrivateKey("ecdsa")
-	if err != nil {
-		t.Fatalf("SetPrivateKey(ecdsa) error = %v", err)
-	}
-
-	err = c.InitSelfSigned()
-	if err != nil {
-		t.Fatalf("InitSelfSigned() error = %v", err)
-	}
-
-	_, err = os.Stat(c.CertPath())
-	if os.IsNotExist(err) {
-		t.Errorf("Cert file does not exist")
-	}
-
-	_, err = os.Stat(c.KeyPath())
-	if os.IsNotExist(err) {
-		t.Errorf("Key file does not exist")
-	}
-
-	err = os.Remove(c.CertPath())
-	if err != nil {
-		return
-	}
-	err = os.Remove(c.KeyPath())
-	if err != nil {
-		t.Fatal("os.Remove")
-	}
-}
-
-func TestInitSelfSigned_ed25519(t *testing.T) {
-	var err error
-	c := NewCertificate()
-	err = c.SetPrivateKey("ed25519")
-	if err != nil {
-		t.Fatalf("SetPrivateKey(ecdsa) error = %v", err)
-	}
-
-	err = c.InitSelfSigned()
-	if err != nil {
-		t.Fatalf("InitSelfSigned() error = %v", err)
-	}
-
-	_, err = os.Stat(c.CertPath())
-	if os.IsNotExist(err) {
-		t.Errorf("Cert file does not exist")
-	}
-
-	_, err = os.Stat(c.KeyPath())
-	if os.IsNotExist(err) {
-		t.Errorf("Key file does not exist")
-	}
-
-	err = os.Remove(c.CertPath())
-	if err != nil {
-		return
-	}
-	err = os.Remove(c.KeyPath())
-	if err != nil {
-		t.Fatal("os.Remove")
-	}
-}
-
-func TestInitSelfSigned_InvalidAlgo(t *testing.T) {
-	c := NewCertificate()
-	err := c.SetPrivateKey("invalid")
-	if err == nil {
-		t.Fatalf("Expected error for invalid algo, but got nil")
-	}
+	rsaSigner := new(BadSigner)
+	c := NewCertificate(rsaSigner)
 
 	err = c.InitSelfSigned()
 	if err == nil {
-		t.Fatalf("Expected error for invalid algo, but got nil")
-	}
-}
-
-func BenchmarkCertificate_InitSelfSigned_rsa(b *testing.B) {
-	var err error
-	c := NewCertificate()
-	err = c.SetPrivateKey("rsa")
-	if err != nil {
-		b.Fatal("setPrivateKey error")
-	}
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		err = c.InitSelfSigned()
-		if err != nil {
-			b.Fatal("initSelfSigned")
-		}
+		t.Fatalf("expected InitSelfSigned() error = %v", err)
 	}
 
 }
 
-func BenchmarkCertificate_InitSelfSigned_ecdsa(b *testing.B) {
+func BenchmarkCertificate_InitSelfSigned(b *testing.B) {
+	tests := []struct {
+		name   string
+		signer KeyGenerator
+	}{
+		{
+			name:   "Benchmark_Rsa",
+			signer: signers.NewRsaSigner(),
+		},
+		{
+			name:   "Benchmark_Ecdsa",
+			signer: signers.NewEcdsaSigner(),
+		},
+		{
+			name:   "Benchmark_Ed25519",
+			signer: signers.NewEd25519Signer(),
+		},
+	}
 	var err error
-	c := NewCertificate()
-	err = c.SetPrivateKey("ecdsa")
-	if err != nil {
-		b.Fatal("setPrivateKey error")
+	for _, tt := range tests {
+		b.Run(tt.name, func(b *testing.B) {
+			c := NewCertificate(tt.signer)
+			b.ResetTimer()
+
+			for i := 0; i < b.N; i++ {
+				err = c.InitSelfSigned()
+				if err != nil {
+					b.Fatal("initSelfSigned")
+				}
+			}
+			b.StopTimer()
+		})
 	}
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		err = c.InitSelfSigned()
-		if err != nil {
-			b.Fatal("initSelfSigned")
-		}
-	}
-
-}
-
-func BenchmarkCertificate_InitSelfSigned_ed25519(b *testing.B) {
-	var err error
-	c := NewCertificate()
-	err = c.SetPrivateKey("ed25519")
-	if err != nil {
-		b.Fatal("setPrivateKey error")
-	}
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		err = c.InitSelfSigned()
-		if err != nil {
-			b.Fatal("initSelfSigned")
-		}
-	}
-
 }

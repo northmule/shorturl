@@ -20,6 +20,7 @@ import (
 	"github.com/northmule/shorturl/internal/app/handlers"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/certificate"
+	"github.com/northmule/shorturl/internal/app/services/certificate/signers"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/workers"
@@ -102,11 +103,7 @@ func run(ctx context.Context) error {
 			MinVersion: tls.VersionTLS13,
 		}
 		logger.LogSugar.Info("Подготова сертификата и ключа для TLS сервера")
-		certService := certificate.NewCertificate()
-		err = certService.SetPrivateKey("ecdsa")
-		if err != nil {
-			return err
-		}
+		certService := certificate.NewCertificate(signers.NewEcdsaSigner())
 		err = certService.InitSelfSigned()
 		if err != nil {
 			return err
