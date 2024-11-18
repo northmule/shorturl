@@ -141,48 +141,41 @@ func TestUserURLsHandler_Delete(t *testing.T) {
 }
 
 func TestDelete_BadBody(t *testing.T) {
+	tests := []struct {
+		name string
+		body io.Reader
+	}{
+		{
+			name: "bad_body",
+			body: io.NopCloser(&errorReader{}),
+		},
+		{
+			name: "bad_json",
+			body: bytes.NewBufferString("{}"),
+		},
+	}
+
 	_ = logger.InitLogger("fatal")
 	deleter := new(MockDeleter)
 	handler := &UserURLsHandler{
 		worker: deleter,
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest("DELETE", "/api/user/urls", tt.body)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	errBody := io.NopCloser(&errorReader{})
-	req, err := http.NewRequest("DELETE", "/api/user/urls", errBody)
-	if err != nil {
-		t.Fatal(err)
+			res := httptest.NewRecorder()
+
+			handler.Delete(res, req)
+
+			if res.Code != http.StatusBadRequest {
+				t.Errorf("Expected status code %d, but got %d", http.StatusBadRequest, res.Code)
+			}
+		})
 	}
-
-	res := httptest.NewRecorder()
-
-	handler.Delete(res, req)
-
-	if res.Code != http.StatusBadRequest {
-		t.Errorf("Expected status code %d, but got %d", http.StatusBadRequest, res.Code)
-	}
-
-}
-
-func TestDelete_BadJson(t *testing.T) {
-	_ = logger.InitLogger("fatal")
-	deleter := new(MockDeleter)
-	handler := &UserURLsHandler{
-		worker: deleter,
-	}
-
-	req, err := http.NewRequest("DELETE", "/api/user/urls", bytes.NewBufferString("{}"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	res := httptest.NewRecorder()
-
-	handler.Delete(res, req)
-
-	if res.Code != http.StatusBadRequest {
-		t.Errorf("Expected status code %d, but got %d", http.StatusBadRequest, res.Code)
-	}
-
 }
 
 func TestView_BadFinder(t *testing.T) {
