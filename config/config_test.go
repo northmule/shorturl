@@ -169,6 +169,7 @@ func TestNewConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	actualConfig, err := NewConfig()
+	assert.NoError(t, err)
 
 	wantConfig := &Config{
 		ServerURL:       "mocked_address",
