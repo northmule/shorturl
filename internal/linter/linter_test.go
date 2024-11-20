@@ -3,12 +3,9 @@ package linter
 import (
 	"testing"
 
-	"github.com/cybozu-go/golang-custom-analyzer/pkg/restrictpkg"
-	"github.com/kisielk/errcheck/errcheck"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/tools/go/analysis/passes/appends"
-	"golang.org/x/tools/go/analysis/passes/asmdecl"
+	"golang.org/x/tools/go/analysis"
 )
 
 func TestNewStaticlintConfig(t *testing.T) {
@@ -34,51 +31,56 @@ func TestFilConfig_InvalidJSON(t *testing.T) {
 	assert.Contains(t, err.Error(), "конфигурация не разобрана")
 }
 
-func TestInitAnalysis(t *testing.T) {
-	jsonData := []byte(`{"staticcheck": [], "analysis": ["appends", "asmdecl"]}`)
-	config := NewStaticlintConfig(jsonData)
-	err := config.FilConfig()
-	require.NoError(t, err)
-
-	analyzers := config.InitAnalysis()
-	require.Len(t, analyzers, 2)
-	assert.Equal(t, appends.Analyzer, analyzers[0])
-	assert.Equal(t, asmdecl.Analyzer, analyzers[1])
-}
-
-func TestInitStaticCheck(t *testing.T) {
-	jsonData := []byte(`{"staticcheck": ["SA1000", "SA1001"], "analysis": []}`)
-	config := NewStaticlintConfig(jsonData)
-	err := config.FilConfig()
-	require.NoError(t, err)
-
-	analyzers := config.InitStaticCheck()
-	require.Len(t, analyzers, 2)
-	// Assuming the staticcheck analyzers have the names "SA1000" and "SA1001"
-	assert.Equal(t, "SA1000", analyzers[0].Name)
-	assert.Equal(t, "SA1001", analyzers[1].Name)
-}
-
-func TestInitOtherCheck(t *testing.T) {
-	jsonData := []byte(`{"staticcheck": [], "analysis": [], "other": ["errcheck", "restrictpkg"]}`)
-	config := NewStaticlintConfig(jsonData)
-	err := config.FilConfig()
-	require.NoError(t, err)
-
-	analyzers := config.InitOtherCheck()
-	require.Len(t, analyzers, 2)
-	assert.Equal(t, errcheck.Analyzer, analyzers[0])
-	assert.Equal(t, restrictpkg.RestrictPackageAnalyzer, analyzers[1])
-}
-
-func TestInitOsExitCheck(t *testing.T) {
-	jsonData := []byte(`{"staticcheck": [], "analysis": [], "other": ["osexit"]}`)
-	config := NewStaticlintConfig(jsonData)
-	err := config.FilConfig()
-	require.NoError(t, err)
-
-	analyzers := config.InitOsExitCheck()
-	require.Len(t, analyzers, 1)
-	// Assuming the OsExitCheck analyzer is registered
-	assert.Equal(t, OsExitCheck, analyzers[0])
+func TestInitAnalyzers(t *testing.T) {
+	tests := []struct {
+		name          string
+		jsonData      []byte
+		initFunc      func(*StaticlintConfig) []*analysis.Analyzer
+		expectedNames []string
+	}{
+		{
+			name:     "InitAnalysis",
+			jsonData: []byte(`{"staticcheck": [], "analysis": ["appends", "asmdecl"]}`),
+			initFunc: func(config *StaticlintConfig) []*analysis.Analyzer {
+				return config.InitAnalysis()
+			},
+			expectedNames: []string{"appends", "asmdecl"},
+		},
+		{
+			name:     "InitStaticCheck",
+			jsonData: []byte(`{"staticcheck": ["SA1000", "SA1001"], "analysis": []}`),
+			initFunc: func(config *StaticlintConfig) []*analysis.Analyzer {
+				return config.InitStaticCheck()
+			},
+			expectedNames: []string{"SA1000", "SA1001"},
+		},
+		{
+			name:     "InitOtherCheck",
+			jsonData: []byte(`{"staticcheck": [], "analysis": [], "other": ["errcheck", "restrictpkg"]}`),
+			initFunc: func(config *StaticlintConfig) []*analysis.Analyzer {
+				return config.InitOtherCheck()
+			},
+			expectedNames: []string{"errcheck", "restrictpkg"},
+		},
+		{
+			name:     "InitOsExitCheck",
+			jsonData: []byte(`{"staticcheck": [], "analysis": [], "other": ["osexit"]}`),
+			initFunc: func(config *StaticlintConfig) []*analysis.Analyzer {
+				return config.InitOsExitCheck()
+			},
+			expectedNames: []string{"osexit"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := NewStaticlintConfig(tt.jsonData)
+			err := config.FilConfig()
+			require.NoError(t, err)
+			analyzers := tt.initFunc(config)
+			require.Len(t, analyzers, len(tt.expectedNames))
+			for i, expectedName := range tt.expectedNames {
+				assert.Equal(t, expectedName, analyzers[i].Name)
+			}
+		})
+	}
 }

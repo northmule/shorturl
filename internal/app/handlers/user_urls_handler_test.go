@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	AppContext "github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,6 +25,14 @@ type MockFinder struct {
 func (m *MockFinder) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
 	args := m.Called(userUUID)
 	return args.Get(0).(*[]models.URL), args.Error(1)
+}
+
+type MockFinderBad struct {
+	mock.Mock
+}
+
+func (m *MockFinderBad) FindUrlsByUserID(userUUID string) (*[]models.URL, error) {
+	return nil, errors.New("error")
 }
 
 type MockDeleter struct {
@@ -126,5 +137,87 @@ func TestUserURLsHandler_Delete(t *testing.T) {
 
 	if !deleter.IsDeleted {
 		t.Error("Deleter should be marked as deleted")
+	}
+}
+
+func TestDelete_BadBody(t *testing.T) {
+	tests := []struct {
+		name string
+		body io.Reader
+	}{
+		{
+			name: "bad_body",
+			body: io.NopCloser(&errorReader{}),
+		},
+		{
+			name: "bad_json",
+			body: bytes.NewBufferString("{}"),
+		},
+	}
+
+	_ = logger.InitLogger("fatal")
+	deleter := new(MockDeleter)
+	handler := &UserURLsHandler{
+		worker: deleter,
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest("DELETE", "/api/user/urls", tt.body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			res := httptest.NewRecorder()
+
+			handler.Delete(res, req)
+
+			if res.Code != http.StatusBadRequest {
+				t.Errorf("Expected status code %d, but got %d", http.StatusBadRequest, res.Code)
+			}
+		})
+	}
+}
+
+func TestView_BadFinder(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	finder := new(MockFinderBad)
+	handler := &UserURLsHandler{
+		finder: finder,
+	}
+
+	req, err := http.NewRequest("GET", "/api/user/urls", bytes.NewBufferString("{}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	handler.View(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Errorf("Expected status code %d, but got %d", http.StatusInternalServerError, res.Code)
+	}
+
+}
+
+func TestView_StatusNoContent(t *testing.T) {
+	_ = logger.InitLogger("fatal")
+	memoryStorage := storage.NewMemoryStorage()
+	handler := &UserURLsHandler{
+		finder: memoryStorage,
+	}
+
+	req, err := http.NewRequest("GET", "/api/user/urls", bytes.NewBufferString("{}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	userUUID := "user123"
+	req = req.WithContext(context.WithValue(req.Context(), AppContext.KeyContext, userUUID))
+	res := httptest.NewRecorder()
+
+	handler.View(res, req)
+
+	if res.Code != http.StatusNoContent {
+		t.Errorf("Expected status code %d, but got %d", http.StatusNoContent, res.Code)
 	}
 }

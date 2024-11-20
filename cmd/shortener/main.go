@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -18,6 +19,8 @@ import (
 	"github.com/northmule/shorturl/db"
 	"github.com/northmule/shorturl/internal/app/handlers"
 	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/certificate"
+	"github.com/northmule/shorturl/internal/app/services/certificate/signers"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/workers"
@@ -35,7 +38,7 @@ var (
 // @host      localhost:8080
 func main() {
 	printLabel()
-	appCtx, appStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	appCtx, appStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer appStop()
 	if err := run(appCtx); err != nil {
 		log.Fatal(err)
@@ -94,8 +97,24 @@ func run(ctx context.Context) error {
 		}
 	}()
 
-	logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)
-	err = httpServer.ListenAndServe()
+	if cfg.EnableHTTPS {
+
+		httpServer.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS13,
+		}
+		logger.LogSugar.Info("Подготова сертификата и ключа для TLS сервера")
+		certService := certificate.NewCertificate(signers.NewEcdsaSigner())
+		err = certService.InitSelfSigned()
+		if err != nil {
+			return err
+		}
+		logger.LogSugar.Infof("Сертификат: %s, ключ: %s созданы", certService.CertPath(), certService.KeyPath())
+		logger.LogSugar.Infof("Running server TLS on - %s", cfg.ServerURL)
+		err = httpServer.ListenAndServeTLS(certService.CertPath(), certService.KeyPath())
+	} else {
+		logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)
+		err = httpServer.ListenAndServe()
+	}
 
 	if err != nil {
 		if errors.Is(err, http.ErrServerClosed) {

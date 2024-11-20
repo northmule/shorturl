@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAFlagAndBFlag(t *testing.T) {
@@ -95,5 +98,89 @@ func TestAFlagAndBFlag(t *testing.T) {
 				t.Errorf("Ожидается %#v пришло %#v", tt.want.BaseShortURL, AppConfig.BaseShortURL)
 			}
 		})
+	}
+}
+
+func TestInitJSONConfig(t *testing.T) {
+	jsonConfig := `{
+		"server_address": "localhost:8080",
+		"base_url": "http://localhost:8080",
+		"file_storage_path": "/tmp/storage",
+		"database_dsn": "/dbname",
+		"enable_https": true
+	}`
+	jsonFile, err := os.CreateTemp("", "config.json")
+	assert.NoError(t, err)
+	defer os.Remove(jsonFile.Name())
+
+	_, err = jsonFile.WriteString(jsonConfig)
+	assert.NoError(t, err)
+	err = jsonFile.Close()
+	assert.NoError(t, err)
+
+	var actualConfig Config
+
+	actualConfig.Config = jsonFile.Name()
+	err = actualConfig.InitJSONConfig()
+
+	assert.NoError(t, err)
+
+	wantConfig := Config{
+		ServerURL:       "localhost:8080",
+		BaseShortURL:    "http://localhost:8080",
+		FileStoragePath: "/tmp/storage",
+		DataBaseDsn:     "/dbname",
+		EnableHTTPS:     true,
+		Config:          jsonFile.Name(),
+	}
+	if diff := cmp.Diff(wantConfig, actualConfig); diff != "" {
+		t.Errorf("Config mismatch (-expected +got):\n%s", diff)
+	}
+}
+
+func TestNewConfig(t *testing.T) {
+
+	_ = os.Setenv("SERVER_ADDRESS", "mocked_address")
+	_ = os.Setenv("BASE_URL", "mocked_base_url")
+	_ = os.Setenv("FILE_STORAGE_PATH", "mocked_file_path")
+	_ = os.Setenv("DATABASE_DSN", "mocked_db_dsn")
+	_ = os.Setenv("PPROF_ENABLED", "true")
+	_ = os.Setenv("ENABLE_HTTPS", "true")
+
+	jsonFile, err := os.CreateTemp("", "config.json")
+	assert.NoError(t, err)
+
+	_ = os.Setenv("CONFIG", jsonFile.Name())
+	defer os.Remove(jsonFile.Name())
+
+	os.Args = []string{"cmd", "-a", "mocked_address_cmd", "-b", "mocked_base_url_cmd", "-f", "mocked_file_path_cmd", "-d", "mocked_db_dsn_cmd", "-pprof", "-s"}
+
+	jsonConfig := `{
+		"server_address": "localhost:8080",
+		"base_url": "http://localhost:8080",
+		"file_storage_path": "/tmp/storage",
+		"database_dsn": "/dbname",
+		"enable_https": true
+	}`
+
+	_, err = jsonFile.WriteString(jsonConfig)
+	assert.NoError(t, err)
+	err = jsonFile.Close()
+	assert.NoError(t, err)
+
+	actualConfig, err := NewConfig()
+	assert.NoError(t, err)
+
+	wantConfig := &Config{
+		ServerURL:       "mocked_address",
+		BaseShortURL:    "mocked_base_url",
+		FileStoragePath: "mocked_file_path",
+		DataBaseDsn:     "mocked_db_dsn",
+		PprofEnabled:    true,
+		EnableHTTPS:     true,
+		Config:          jsonFile.Name(),
+	}
+	if diff := cmp.Diff(wantConfig, actualConfig); diff != "" {
+		t.Errorf("Config mismatch (-expected +got):\n%s", diff)
 	}
 }

@@ -13,7 +13,7 @@ threshold:
 
   # (optional; default 0)
   # The minimum total coverage project should have
-  total: 65
+  total: 80
 
 
 # Holds regexp rules which will exclude matched files or packages
@@ -23,10 +23,13 @@ exclude:
   paths:
     - \.pb\.go$    # excludes all protobuf generated files
     - ^internal/app/storage/mocks/*
-    - ^cmd/*
+    - ^cmd/goose/*
+    - ^cmd/shortener/*
+    - ^cmd/staticlint/*
     - ^profiles/*
     - ^tools/*
     - ^internal/linter/testdata/*
     - ^db/*
     - ^internal/app/storage/mocks/*
     - ^internal/app/storage/models/*
+    - ^swagger/*

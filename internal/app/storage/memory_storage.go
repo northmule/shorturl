@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"sync"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/northmule/shorturl/internal/app/storage/models"
 )
 
@@ -12,8 +15,8 @@ type MemoryStorage struct {
 	// ссылки (ключ короткая ссылка, значение полная)
 	db    *map[string]models.URL
 	users map[int]models.User
-	// удалённый url (ключ короткая ссылка, значение uuid пользователя)
-	deletedURLs map[string]string
+	// удалённый url (ключ короткая ссылка, значение время)
+	deletedURLs map[string]time.Time
 	// ссылки пользователя (ключ короткая ссылка, значение - uuid пользователя)
 	userURLs map[string]string
 	// Синхронизация конккуретного доступа
@@ -35,7 +38,7 @@ func NewMemoryStorage() *MemoryStorage {
 	instance := MemoryStorage{
 		db:          &databaseData,
 		users:       make(map[int]models.User, 100),
-		deletedURLs: make(map[string]string, 100),
+		deletedURLs: make(map[string]time.Time, 100),
 		userURLs:    make(map[string]string, 100),
 	}
 
@@ -47,6 +50,13 @@ func (s *MemoryStorage) Add(url models.URL) (int64, error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	data := *s.db
+	if _, ok := data[url.ShortURL]; ok {
+		duplicateKeyError := pgconn.PgError{
+			Code: CodeErrorDuplicateKey,
+		}
+		err := errors.New("short url already exists")
+		return 0, errors.Join(err, &duplicateKeyError)
+	}
 	s.lastIDForURL++
 	url.ID = s.lastIDForURL
 	data[url.ShortURL] = url
@@ -65,7 +75,7 @@ func (s *MemoryStorage) CreateUser(user models.User) (int64, error) {
 // SoftDeletedShortURL Отметка об удалении ссылки.
 func (s *MemoryStorage) SoftDeletedShortURL(userUUID string, shortURL ...string) error {
 	for _, value := range shortURL {
-		s.deletedURLs[value] = userUUID
+		s.deletedURLs[value] = time.Now()
 	}
 	return nil
 }
@@ -95,6 +105,9 @@ func (s *MemoryStorage) FindByShortURL(shortURL string) (*models.URL, error) {
 	defer s.mx.RUnlock()
 	data := *s.db
 	if url, ok := data[shortURL]; ok {
+		if deletedTime, ok2 := s.deletedURLs[shortURL]; ok2 {
+			url.DeletedAt = deletedTime
+		}
 		return &url, nil
 	}
 
