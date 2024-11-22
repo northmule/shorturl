@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMemoryStorage_StorageMethods(t *testing.T) {
@@ -239,4 +240,28 @@ func BenchmarkMemoryStorage(b *testing.B) {
 			storage.MultiAdd(urls)
 		}
 	})
+}
+
+func TestMemoryStorage_GetCountShortURL(t *testing.T) {
+	storage := NewMemoryStorage()
+	cnt, _ := storage.GetCountShortURL()
+	assert.Equal(t, int64(1), cnt)
+	storage.Add(models.URL{ShortURL: "123", URL: "https://ya.ru"})
+	storage.Add(models.URL{ShortURL: "321", URL: "https://ya1.ru"})
+	cnt, _ = storage.GetCountShortURL()
+	assert.Equal(t, int64(3), cnt)
+}
+
+func TestMemoryStorage_GetCountUser(t *testing.T) {
+	storage := NewMemoryStorage()
+	user := models.User{
+		ID:       1,
+		Name:     "name",
+		Login:    "Login",
+		Password: "Login",
+		UUID:     uuid.NewString(),
+	}
+	_, _ = storage.CreateUser(user)
+	cnt, _ := storage.GetCountUser()
+	assert.Equal(t, int64(1), cnt)
 }

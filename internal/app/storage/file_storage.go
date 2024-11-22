@@ -169,3 +169,23 @@ func (f *FileStorage) restoreStorage() {
 		logger.LogSugar.Errorf("При восстановлении храналица, обнаружены ошибки: %s", err)
 	}
 }
+
+// GetCountShortURL кол-во сокращенных URL
+func (f *FileStorage) GetCountShortURL() (int64, error) {
+	return int64(len(f.cacheValues)), nil
+}
+
+// GetCountUser кол-во пользвателей
+func (f *FileStorage) GetCountUser() (int64, error) {
+	userFile, err := os.Open(f.users.Name())
+	if err != nil {
+		return 0, err
+	}
+	b := bufio.NewScanner(userFile)
+	var cnt int64
+	for b.Scan() {
+		cnt++
+	}
+
+	return cnt, nil
+}

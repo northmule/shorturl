@@ -163,3 +163,13 @@ func (s *MemoryStorage) FindUrlsByUserID(userUUID string) (*[]models.URL, error)
 	}
 	return &urls, nil
 }
+
+// GetCountShortURL кол-во сокращенных URL
+func (s *MemoryStorage) GetCountShortURL() (int64, error) {
+	return int64(len(*(s.db))), nil
+}
+
+// GetCountUser кол-во пользвателей
+func (s *MemoryStorage) GetCountUser() (int64, error) {
+	return int64(len(s.users)), nil
+}
