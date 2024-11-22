@@ -22,13 +22,15 @@ func TestInit(t *testing.T) {
 				FileStoragePath: "/tmp/storage",
 				DataBaseDsn:     "/dbname",
 				EnableHTTPS:     true,
+				TrustedSubnet:   "192.168.0.1/24",
 			},
 			actual: `{
 		"server_address": "localhost:8080",
 		"base_url": "http://localhost:8080",
 		"file_storage_path": "/tmp/storage",
 		"database_dsn": "/dbname",
-		"enable_https": true
+		"enable_https": true,
+		"trusted_subnet": "192.168.0.1/24"
 	}`,
 		},
 		{

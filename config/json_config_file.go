@@ -57,5 +57,9 @@ func (cfg *JSONConfig) Init(appConfig *Config) error {
 		appConfig.EnableHTTPS = JSONCfg.EnableHTTPS
 	}
 
+	if appConfig.TrustedSubnet == "" {
+		appConfig.TrustedSubnet = JSONCfg.TrustedSubnet
+	}
+
 	return nil
 }

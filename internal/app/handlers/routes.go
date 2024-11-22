@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/handlers/middlewarehandler"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
@@ -18,6 +19,8 @@ type Routes struct {
 	sessionStorage  storage.SessionAdapter
 	worker          *workers.Worker
 	storage         storage.StorageQuery
+	finderStats     FinderStats
+	configApp       *config.Config
 }
 
 // todo: поменять на RoutesBuilder
@@ -31,6 +34,11 @@ func NewRoutes(shortURLService *url.ShortURLService, storage storage.StorageQuer
 	}
 }
 
+const (
+	statsURI   = "/api/internal/stats"
+	userURLURI = "/api/user/urls"
+)
+
 // Init создаёт маршруты.
 func (routes *Routes) Init() chi.Router {
 	r := chi.NewRouter()
@@ -41,6 +49,7 @@ func (routes *Routes) Init() chi.Router {
 	})
 
 	checkAuth := middlewarehandler.NewCheckAuth(routes.storage, routes.sessionStorage)
+	checkTrustedSubnet := middlewarehandler.NewCheckTrustedSubnet(routes.configApp)
 
 	r.Use(middleware.RequestLogger(logger.LogSugar))
 	r.Use(middlewarehandler.MiddlewareGzipCompressor)
@@ -50,6 +59,8 @@ func (routes *Routes) Init() chi.Router {
 	pingHandler := NewPingHandler(routes.storage)
 
 	userUrlsHandler := NewUserUrlsHandler(routes.storage, routes.sessionStorage, routes.worker)
+
+	statsHandler := NewStatsHandler(routes.finderStats)
 
 	r.With(
 		checkAuth.AuthEveryone,
@@ -64,12 +75,16 @@ func (routes *Routes) Init() chi.Router {
 	r.With(
 		checkAuth.AccessVerificationUserUrls,
 		checkAuth.AuthEveryone,
-	).Get("/api/user/urls", userUrlsHandler.View)
+	).Get(userURLURI, userUrlsHandler.View)
 
 	r.With(
 		checkAuth.AccessVerificationUserUrls,
 		checkAuth.AuthEveryone,
-	).Delete("/api/user/urls", userUrlsHandler.Delete)
+	).Delete(userURLURI, userUrlsHandler.Delete)
+
+	r.With(
+		checkTrustedSubnet.GrantAccess,
+	).Get(statsURI, statsHandler.ViewStats)
 
 	return r
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/storage/models"
+	"github.com/stretchr/testify/assert"
 )
 
 type demoData []models.URL
@@ -197,4 +198,58 @@ func TestCreateUser(t *testing.T) {
 	if storedUser.Login != user.Login || storedUser.UUID != user.UUID {
 		t.Errorf("Stored user data does not match expected data")
 	}
+}
+
+func TestGetCountShortURL(t *testing.T) {
+
+	tempFile, err := os.CreateTemp("", "test-storage-*.json")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	storage := NewFileStorage(tempFile)
+	if storage == nil {
+		t.Fatalf("Failed to initialize FileStorage")
+	}
+	defer storage.Close()
+	tempFile.Close()
+	url := models.URL{
+		ID:       1,
+		ShortURL: "aaa",
+		URL:      "bbbbbbb",
+	}
+	_, _ = storage.Add(url)
+
+	cnt, _ := storage.GetCountShortURL()
+
+	assert.Equal(t, int64(1), cnt)
+}
+
+func TestGetCountUser(t *testing.T) {
+
+	tempFile, err := os.CreateTemp("", "test-storage-*.json")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	storage := NewFileStorage(tempFile)
+	if storage == nil {
+		t.Fatalf("Failed to initialize FileStorage")
+	}
+	defer storage.Close()
+
+	user := models.User{
+		Login: "testuser",
+		UUID:  "testuuid",
+	}
+
+	_, err = storage.CreateUser(user)
+	if err != nil {
+		t.Errorf("CreateUser returned an error: %v", err)
+	}
+
+	cnt, _ := storage.GetCountUser()
+	assert.Equal(t, int64(1), cnt)
 }

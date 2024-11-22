@@ -56,7 +56,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	storage, err := getStorage(ctx, cfg)
+	storage, finderStats, err := getStorage(ctx, cfg)
 	if err != nil {
 		return err
 	}
@@ -65,11 +65,14 @@ func run(ctx context.Context) error {
 	stop := make(chan struct{})
 	worker := workers.NewWorker(storage, stop)
 
+	// Собираем роутер
 	handlerBuilder := handlers.GetBuilder()
 	handlerBuilder.SetService(shortURLService)
 	handlerBuilder.SetStorage(storage)
 	handlerBuilder.SetSessionStorage(sessionStorage)
 	handlerBuilder.SetWorker(worker)
+	handlerBuilder.SetFinderStats(finderStats)
+	handlerBuilder.SetConfigApp(cfg)
 	routes := handlerBuilder.GetAppRoutes().Init()
 
 	if cfg.PprofEnabled {
@@ -127,35 +130,37 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func getStorage(ctx context.Context, cfg *config.Config) (appStorage.StorageQuery, error) {
+func getStorage(ctx context.Context, cfg *config.Config) (appStorage.StorageQuery, handlers.FinderStats, error) {
 
 	if cfg.DataBaseDsn != "" {
 		s, err := appStorage.NewPostgresStorage(cfg.DataBaseDsn)
 		if err != nil {
 			logger.LogSugar.Errorf("Failed NewPostgresStorage dsn: %s, %s", cfg.DataBaseDsn, err)
-			return nil, err
+			return nil, nil, err
 		}
 
 		logger.LogSugar.Info("Инициализация миграций")
 		migrations := db.NewMigrations(s.RawDB)
 		err = migrations.Up(ctx)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		return s, nil
+		return s, s, nil
 	}
 
 	if cfg.FileStoragePath != "" {
 		file, err := os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			logger.LogSugar.Errorf("Failed to open file %s: error: %s", cfg.FileStoragePath, err)
-			return nil, err
+			return nil, nil, err
 		}
-		return appStorage.NewFileStorage(file), nil
+		s := appStorage.NewFileStorage(file)
+		return s, s, nil
 	}
 
-	return appStorage.NewMemoryStorage(), nil
+	s := appStorage.NewMemoryStorage()
+	return s, s, nil
 }
 
 func printLabel() {

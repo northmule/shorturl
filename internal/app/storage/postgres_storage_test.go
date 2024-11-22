@@ -181,5 +181,22 @@ func (o *PostgresStorageTestSuite) TestFindUrlsByUserID() {
 	urls, err := o.pg.FindUrlsByUserID(userUUID)
 	require.NoError(o.T(), err)
 	require.Equal(o.T(), 1, len(*urls))
+}
 
+func (o *PostgresStorageTestSuite) TestGetCountUser() {
+	o.mock.ExpectQuery("select count").
+		WillReturnRows(sqlmock.NewRows([]string{"cnt"}).
+			AddRow(43))
+	cnt, err := o.pg.GetCountUser()
+	require.NoError(o.T(), err)
+	require.Equal(o.T(), int64(43), cnt)
+}
+
+func (o *PostgresStorageTestSuite) TestGetGetCountShortURL() {
+	o.mock.ExpectQuery("select count").
+		WillReturnRows(sqlmock.NewRows([]string{"cnt"}).
+			AddRow(51))
+	cnt, err := o.pg.GetCountShortURL()
+	require.NoError(o.T(), err)
+	require.Equal(o.T(), int64(51), cnt)
 }
