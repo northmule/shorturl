@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package contract;
+
+option go_package = "contract/";
+import "google/protobuf/empty.proto";
+
+message ViewRequest {
+  string user_uuid = 1;
+}
+
+message ViewResponse {
+  message Item {
+      string short_url = 1;
+      string original_url = 2;
+  }
+  repeated Item items = 1;
+}
+
+message DeleteRequest {
+  repeated string short_urls = 1;
+}
+
+service UserUrlsHandler {
+  rpc View(ViewRequest) returns (ViewResponse);
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+}

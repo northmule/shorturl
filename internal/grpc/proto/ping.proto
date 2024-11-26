@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package contract;
+
+option go_package = "contract/";
+import "google/protobuf/empty.proto";
+
+message CheckStorageConnectResponse {
+  bool ok = 1;
+}
+
+service PingHandler {
+  rpc CheckStorageConnect(google.protobuf.Empty) returns (CheckStorageConnectResponse);
+}

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package contract;
+
+option go_package = "contract/";
+
+message RedirectRequest {
+   string id = 1;
+}
+
+message RedirectResponse {
+  string url = 1;
+}
+
+service RedirectHandler {
+  rpc Redirect(RedirectRequest) returns (RedirectResponse);
+}
