@@ -5,10 +5,6 @@ package contract;
 option go_package = "contract/";
 import "google/protobuf/empty.proto";
 
-message ViewRequest {
-  string user_uuid = 1;
-}
-
 message ViewResponse {
   message Item {
       string short_url = 1;
@@ -22,6 +18,6 @@ message DeleteRequest {
 }
 
 service UserUrlsHandler {
-  rpc View(ViewRequest) returns (ViewResponse);
+  rpc View(google.protobuf.Empty) returns (ViewResponse);
   rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
 }

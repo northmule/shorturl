@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/northmule/shorturl/internal/app/logger"
 	mData "github.com/northmule/shorturl/internal/grpc/handlers/metadata"
 	"github.com/northmule/shorturl/internal/grpc/handlers/utils"
 	"google.golang.org/grpc/metadata"
@@ -14,31 +13,37 @@ import (
 
 // Logger логгер запросов
 type Logger struct {
+	l Info
+}
+
+// Info интерфейс с методами
+type Info interface {
+	Infof(template string, args ...interface{})
 }
 
 // NewLogger конструктор
-func NewLogger() *Logger {
-	return &Logger{}
+func NewLogger(l Info) *Logger {
+	return &Logger{l: l}
 }
 
 // LogStart начало запроса
 func (l *Logger) LogStart(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	ctx = utils.AppendMData(ctx, mData.RequestTime, time.Now().String())
-	logger.LogSugar.Infof("Запрос: %s", info.FullMethod)
-	logger.LogSugar.Infof("Req: %v", req)
-	logger.LogSugar.Infof("Ctx: %v", ctx)
+	l.l.Infof("Запрос: %s", info.FullMethod)
+	l.l.Infof("Req: %v", req)
+	l.l.Infof("Ctx: %v", ctx)
 	return handler(ctx, req)
 }
 
 // LogEnd конец запроса
 func (l *Logger) LogEnd(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	logger.LogSugar.Infof("Обработка запрос: %s завершена", info.FullMethod)
+	l.l.Infof("Обработка запрос: %s завершена", info.FullMethod)
 
 	md, _ := metadata.FromIncomingContext(ctx)
 	mdValues := md.Get(mData.RequestTime)
 	startTime, _ := time.Parse(time.RFC3339Nano, mdValues[0])
 	endTime := time.Since(startTime).String()
 
-	logger.LogSugar.Infof("Время: %v", endTime)
+	l.l.Infof("Время: %v", endTime)
 	return handler(ctx, req)
 }

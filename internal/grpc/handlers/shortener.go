@@ -62,12 +62,12 @@ func (s *ShortenerHandler) Shortener(ctx context.Context, request *contract.Shor
 func (s *ShortenerHandler) ShortenerJSON(ctx context.Context, request *contract.ShortenerJSONRequest) (*contract.ShortenerJSONResponse, error) {
 
 	if !strings.Contains(request.GetUrl(), "http://") && !strings.Contains(request.GetUrl(), "https://") {
-		return nil, status.Error(codes.InvalidArgument, "\"expected url")
+		return nil, status.Error(codes.InvalidArgument, "expected url")
 	}
 
 	userUUID, err := utils.FillUserUUID(ctx)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "\"expected userUUID")
+		return nil, status.Error(codes.InvalidArgument, "expected userUUID")
 	}
 
 	shortURL, err := s.fillShortURL(userUUID, request.GetUrl())

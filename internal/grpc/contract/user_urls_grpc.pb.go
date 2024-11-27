@@ -28,7 +28,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserUrlsHandlerClient interface {
-	View(ctx context.Context, in *ViewRequest, opts ...grpc.CallOption) (*ViewResponse, error)
+	View(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ViewResponse, error)
 	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
@@ -40,7 +40,7 @@ func NewUserUrlsHandlerClient(cc grpc.ClientConnInterface) UserUrlsHandlerClient
 	return &userUrlsHandlerClient{cc}
 }
 
-func (c *userUrlsHandlerClient) View(ctx context.Context, in *ViewRequest, opts ...grpc.CallOption) (*ViewResponse, error) {
+func (c *userUrlsHandlerClient) View(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ViewResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ViewResponse)
 	err := c.cc.Invoke(ctx, UserUrlsHandler_View_FullMethodName, in, out, cOpts...)
@@ -64,7 +64,7 @@ func (c *userUrlsHandlerClient) Delete(ctx context.Context, in *DeleteRequest, o
 // All implementations must embed UnimplementedUserUrlsHandlerServer
 // for forward compatibility.
 type UserUrlsHandlerServer interface {
-	View(context.Context, *ViewRequest) (*ViewResponse, error)
+	View(context.Context, *empty.Empty) (*ViewResponse, error)
 	Delete(context.Context, *DeleteRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedUserUrlsHandlerServer()
 }
@@ -76,7 +76,7 @@ type UserUrlsHandlerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedUserUrlsHandlerServer struct{}
 
-func (UnimplementedUserUrlsHandlerServer) View(context.Context, *ViewRequest) (*ViewResponse, error) {
+func (UnimplementedUserUrlsHandlerServer) View(context.Context, *empty.Empty) (*ViewResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method View not implemented")
 }
 func (UnimplementedUserUrlsHandlerServer) Delete(context.Context, *DeleteRequest) (*empty.Empty, error) {
@@ -104,7 +104,7 @@ func RegisterUserUrlsHandlerServer(s grpc.ServiceRegistrar, srv UserUrlsHandlerS
 }
 
 func _UserUrlsHandler_View_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ViewRequest)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func _UserUrlsHandler_View_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: UserUrlsHandler_View_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserUrlsHandlerServer).View(ctx, req.(*ViewRequest))
+		return srv.(UserUrlsHandlerServer).View(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -1,16 +1,18 @@
 package handlers
 
 import (
+	"context"
 	"errors"
-	"net/http"
-	"net/http/httptest"
+	"log"
 	"testing"
 
-	"github.com/northmule/shorturl/internal/app/logger"
-	"github.com/northmule/shorturl/internal/app/services/url"
-	"github.com/northmule/shorturl/internal/app/storage"
-	"github.com/northmule/shorturl/internal/app/workers"
-	"github.com/stretchr/testify/assert"
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/northmule/shorturl/internal/app/handlers"
+	"github.com/northmule/shorturl/internal/grpc/contract"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type mockBadUserFinder struct {
@@ -52,53 +54,56 @@ func (s *mockFinder) GetCountUser() (int64, error) {
 	return 1, nil
 }
 
-func TestStatsHandler_ViewStats(t *testing.T) {
-
-	memoryStorage := storage.NewMemoryStorage()
+func TestStatsHandler_Stats(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		finder       FinderStats
-		expectedCode int
+		finder       handlers.FinderStats
+		expectedCode codes.Code
 	}{
 		{
 			name:         "error_GetCountUser",
 			finder:       new(mockBadUserFinder),
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: codes.Internal,
 		},
 		{
 			name:         "error_GetCountShortURL",
 			finder:       new(mockBadURLsFinder),
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: codes.Internal,
 		},
 		{
 			name:         "ok",
 			finder:       new(mockFinder),
-			expectedCode: http.StatusOK,
+			expectedCode: codes.OK,
 		},
 	}
 
-	_ = logger.InitLogger("fatal")
-
-	stor := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(stor, stor)
-	stop := make(chan struct{})
-	defer func() {
-		stop <- struct{}{}
-	}()
-	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
-	defer ts.Close()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewStatsHandler(tt.finder)
-			req, err := http.NewRequest(http.MethodGet, ts.URL+statsURI, nil)
-			if err != nil {
-				t.Error(err)
+			s := grpc.NewServer()
+			contract.RegisterStatsHandlerServer(s, NewStatsHandler(tt.finder))
+			ctx := context.Background()
+
+			dopts := []grpc.DialOption{
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+				grpc.WithContextDialer(registerServer(s)),
 			}
-			res := httptest.NewRecorder()
-			h.ViewStats(res, req)
-			assert.Equal(t, tt.expectedCode, res.Code)
+
+			conn, err := grpc.NewClient(":///test.server", dopts...)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer conn.Close()
+			client := contract.NewStatsHandlerClient(conn)
+			r := &empty.Empty{}
+			_, err = client.Stats(ctx, r)
+
+			if er, ok := status.FromError(err); ok {
+				if er.Code() != tt.expectedCode {
+					t.Error("error code: expected", tt.expectedCode, "received", er.Code())
+				}
+			}
 		})
 	}
 }

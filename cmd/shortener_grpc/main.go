@@ -69,7 +69,7 @@ func run(ctx context.Context) error {
 	logger.LogSugar.Info("создаём gRPC-сервер")
 	authInterceptor := interceptors.NewCheckAuth(storage, sessionStorage)
 	trustedInterceptor := interceptors.NewCheckTrustedSubnet(cfg)
-	loggerInterceptor := interceptors.NewLogger()
+	loggerInterceptor := interceptors.NewLogger(logger.LogSugar)
 
 	s := grpc.NewServer(grpc.ChainUnaryInterceptor([]grpc.UnaryServerInterceptor{
 		loggerInterceptor.LogStart,

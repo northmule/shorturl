@@ -33,7 +33,7 @@ func NewUserURLsHandler(finder handlers.URLFinder, sessionStorage storage.Sessio
 }
 
 // View короткие ссылки пользователя.
-func (u *UserURLsHandler) View(ctx context.Context, request *contract.ViewRequest) (*contract.ViewResponse, error) {
+func (u *UserURLsHandler) View(ctx context.Context, request *empty.Empty) (*contract.ViewResponse, error) {
 	userUUID, err := utils.FillUserUUID(ctx)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "expected userUUID")
