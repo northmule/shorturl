@@ -58,7 +58,7 @@ func TestStatsHandler_Stats(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		finder       handlers.FinderStats
+		finder       handlers.StatsFinder
 		expectedCode codes.Code
 	}{
 		{

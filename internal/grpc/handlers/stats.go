@@ -13,11 +13,11 @@ import (
 // StatsHandler обработка запросов статистики
 type StatsHandler struct {
 	contract.UnimplementedStatsHandlerServer
-	finderStats handlers.FinderStats
+	finderStats handlers.StatsFinder
 }
 
 // NewStatsHandler конструктор
-func NewStatsHandler(finderStats handlers.FinderStats) *StatsHandler {
+func NewStatsHandler(finderStats handlers.StatsFinder) *StatsHandler {
 	instance := &StatsHandler{
 		finderStats: finderStats,
 	}

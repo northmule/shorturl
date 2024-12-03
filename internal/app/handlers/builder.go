@@ -13,7 +13,7 @@ type RoutesBuilder struct {
 	sessionStorage  storage.SessionAdapter
 	worker          *workers.Worker
 	storage         storage.StorageQuery
-	finderStats     FinderStats
+	finderStats     StatsFinder
 	configApp       *config.Config
 }
 
@@ -24,7 +24,7 @@ type Builder interface {
 	SetWorker(*workers.Worker)
 	SetStorage(storage.StorageQuery)
 	GetAppRoutes() *Routes
-	SetFinderStats(finderStats FinderStats)
+	SetFinderStats(finderStats StatsFinder)
 	SetConfigApp(configApp *config.Config)
 }
 
@@ -71,7 +71,7 @@ func (r *RoutesBuilder) GetAppRoutes() *Routes {
 }
 
 // SetFinderStats finder статистики сервиса
-func (r *RoutesBuilder) SetFinderStats(finderStats FinderStats) {
+func (r *RoutesBuilder) SetFinderStats(finderStats StatsFinder) {
 	r.finderStats = finderStats
 }
 

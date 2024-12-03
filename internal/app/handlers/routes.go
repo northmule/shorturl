@@ -19,7 +19,7 @@ type Routes struct {
 	sessionStorage  storage.SessionAdapter
 	worker          *workers.Worker
 	storage         storage.StorageQuery
-	finderStats     FinderStats
+	finderStats     StatsFinder
 	configApp       *config.Config
 }
 

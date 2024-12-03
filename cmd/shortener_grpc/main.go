@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
 	"github.com/northmule/shorturl/config"
-	"github.com/northmule/shorturl/db"
-	"github.com/northmule/shorturl/internal/app/handlers"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	appStorage "github.com/northmule/shorturl/internal/app/storage"
@@ -51,7 +48,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	storage, finderStats, err := getStorage(ctx, cfg)
+	storage, err := appStorage.NewStorage(ctx, cfg)
 	if err != nil {
 		return err
 	}
@@ -83,7 +80,7 @@ func run(ctx context.Context) error {
 	contract.RegisterPingHandlerServer(s, grpcHandlers.NewPingHandler(storage))
 	contract.RegisterRedirectHandlerServer(s, grpcHandlers.NewRedirectHandler(shortURLService))
 	contract.RegisterShortenerHandlerServer(s, grpcHandlers.NewShortenerHandler(shortURLService, storage, storage))
-	contract.RegisterStatsHandlerServer(s, grpcHandlers.NewStatsHandler(finderStats))
+	contract.RegisterStatsHandlerServer(s, grpcHandlers.NewStatsHandler(storage))
 	contract.RegisterUserUrlsHandlerServer(s, grpcHandlers.NewUserURLsHandler(storage, sessionStorage, worker))
 
 	logger.LogSugar.Infof("Running server on - %s", cfg.ServerURL)
@@ -98,39 +95,6 @@ func run(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func getStorage(ctx context.Context, cfg *config.Config) (appStorage.StorageQuery, handlers.FinderStats, error) {
-
-	if cfg.DataBaseDsn != "" {
-		s, err := appStorage.NewPostgresStorage(cfg.DataBaseDsn)
-		if err != nil {
-			logger.LogSugar.Errorf("Failed NewPostgresStorage dsn: %s, %s", cfg.DataBaseDsn, err)
-			return nil, nil, err
-		}
-
-		logger.LogSugar.Info("Инициализация миграций")
-		migrations := db.NewMigrations(s.RawDB)
-		err = migrations.Up(ctx)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		return s, s, nil
-	}
-
-	if cfg.FileStoragePath != "" {
-		file, err := os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-			logger.LogSugar.Errorf("Failed to open file %s: error: %s", cfg.FileStoragePath, err)
-			return nil, nil, err
-		}
-		s := appStorage.NewFileStorage(file)
-		return s, s, nil
-	}
-
-	s := appStorage.NewMemoryStorage()
-	return s, s, nil
 }
 
 func printLabel() {

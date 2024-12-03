@@ -7,17 +7,17 @@ import (
 
 // StatsHandler обработка запросов статистики
 type StatsHandler struct {
-	finderStats FinderStats
+	finderStats StatsFinder
 }
 
-// FinderStats интерфейс поиска данных
-type FinderStats interface {
+// StatsFinder интерфейс поиска данных
+type StatsFinder interface {
 	GetCountShortURL() (int64, error)
 	GetCountUser() (int64, error)
 }
 
 // NewStatsHandler конструктор
-func NewStatsHandler(finderStats FinderStats) *StatsHandler {
+func NewStatsHandler(finderStats StatsFinder) *StatsHandler {
 	instance := &StatsHandler{
 		finderStats: finderStats,
 	}
