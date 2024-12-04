@@ -273,3 +273,49 @@ func (p *PostgresStorage) SoftDeletedShortURL(userUUID string, shortURL ...strin
 	)`, shortURL, userUUID)
 	return err
 }
+
+// GetCountShortURL кол-во сокращенных URL
+func (p *PostgresStorage) GetCountShortURL() (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	var cnt int64
+	rows, err := p.DB.QueryContext(ctx, `select count(*) as cnt from url_list`)
+	if err != nil {
+		return cnt, err
+	}
+	err = rows.Err()
+	if err != nil {
+		return cnt, err
+	}
+	if rows.Next() {
+		err = rows.Scan(&cnt)
+		if err != nil {
+			return cnt, err
+		}
+	}
+
+	return cnt, nil
+}
+
+// GetCountUser кол-во пользвателей
+func (p *PostgresStorage) GetCountUser() (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.DataBaseConnectionTimeOut*time.Second)
+	defer cancel()
+	var cnt int64
+	rows, err := p.DB.QueryContext(ctx, `select count(*) as cnt from users`)
+	if err != nil {
+		return cnt, err
+	}
+	err = rows.Err()
+	if err != nil {
+		return cnt, err
+	}
+	if rows.Next() {
+		err = rows.Scan(&cnt)
+		if err != nil {
+			return cnt, err
+		}
+	}
+
+	return cnt, nil
+}

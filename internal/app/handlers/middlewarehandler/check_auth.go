@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	AppContext "github.com/northmule/shorturl/internal/app/context"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/auntificator"
@@ -52,38 +50,21 @@ func (c *CheckAuth) AccessVerificationUserUrls(next http.Handler) http.Handler {
 // AuthEveryone авторизация пользователя.
 func (c *CheckAuth) AuthEveryone(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+
+		checkAuthService := auntificator.NewCheckAuth(c.userCreator)
+
 		authorizationToken := auntificator.GetUserToken(req)
-
-		var userUUID string
-		if authorizationToken == "" {
-
-			userUUID = uuid.NewString()
-			token, tokenExp := auntificator.GenerateToken(userUUID, auntificator.HMACTokenExp, auntificator.HMACSecretKey)
-			logger.LogSugar.Infof("Куки не переданы, создаю нового пользователя с uuid %s", userUUID)
-			c.createUser(userUUID)
-			res = c.authorization(res, userUUID, token, tokenExp)
-		} else {
-			cookieValues := strings.Split(authorizationToken, ":")
-			if len(cookieValues) < 2 {
-				logger.LogSugar.Infof("UUID пользователя в куке не найден %s", authorizationToken)
-				res.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			cookieToken := cookieValues[0]
-			userUUID = cookieValues[1]
-			logger.LogSugar.Infof("Нашёл куки для пользователя с uuid %s", userUUID)
-			if !auntificator.ValidateToken(userUUID, cookieToken, auntificator.HMACSecretKey) {
-				userUUID = uuid.NewString()
-				logger.LogSugar.Infof("Токен не прошёл валидацию для пользователя с uuid %s. Создаю нового пользователя", userUUID)
-				token, tokenExp := auntificator.GenerateToken(userUUID, auntificator.HMACTokenExp, auntificator.HMACSecretKey)
-				res = c.authorization(res, userUUID, token, tokenExp)
-			}
-
-			c.createUser(userUUID)
+		authResult, err := checkAuthService.Auth(authorizationToken)
+		if err != nil {
+			res.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if authResult.IsNewUser {
+			res = c.authorization(res, authResult.UserUUID, authResult.Token, authResult.TokenExp)
 		}
 
 		res.Header().Set("content-type", "text/plain; charset=utf-8")
-		ctx := context.WithValue(req.Context(), AppContext.KeyContext, userUUID)
+		ctx := context.WithValue(req.Context(), AppContext.KeyContext, authResult.UserUUID)
 
 		reqWithContext := req.WithContext(ctx)
 		next.ServeHTTP(res, reqWithContext)

@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package contract;
+
+option go_package = "contract/";
+
+import "google/api/annotations.proto";
+
+message ShortenerRequest {
+  string url = 1;
+}
+message ShortenerResponse{
+  string short_url = 1;
+}
+
+message ShortenerJSONRequest {
+  string url = 1;
+}
+
+message ShortenerJSONResponse {
+  string result = 1;
+}
+
+message ShortenerBatchRequest {
+  message Item {
+    string correlation_id = 1;
+    string original_url = 2;
+  }
+  repeated Item items = 1;
+}
+
+message ShortenerBatchResponse {
+  message Item {
+    string correlation_id = 1;
+    string short_url = 2;
+  }
+  repeated Item items = 1;
+}
+
+service ShortenerHandler {
+  rpc Shortener(ShortenerRequest) returns (ShortenerResponse) {
+    option (google.api.http) = {
+      post: "/",
+      body: "*",
+    };
+  };
+  rpc ShortenerJSON(ShortenerJSONRequest) returns (ShortenerJSONResponse) {
+    option (google.api.http) = {
+      post: "/api/shorten",
+      body: "*",
+    };
+  };
+  rpc ShortenerBatch(ShortenerBatchRequest) returns (ShortenerBatchResponse) {
+    option (google.api.http) = {
+      post: "/api/shorten/batch",
+      body: "*",
+    };
+  };
+}

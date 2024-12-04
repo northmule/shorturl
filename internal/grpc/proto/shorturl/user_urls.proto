@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package contract;
+
+option go_package = "contract/";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+message ViewResponse {
+  message Item {
+      string short_url = 1;
+      string original_url = 2;
+  }
+  repeated Item items = 1;
+}
+
+message DeleteRequest {
+  repeated string short_urls = 1;
+}
+
+service UserUrlsHandler {
+  rpc View(google.protobuf.Empty) returns (ViewResponse) {
+    option (google.api.http) = {
+      get: "/api/user/urls"
+    };
+  };
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/user/urls"
+    };
+  };
+}

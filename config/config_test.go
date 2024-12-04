@@ -107,7 +107,8 @@ func TestInitJSONConfig(t *testing.T) {
 		"base_url": "http://localhost:8080",
 		"file_storage_path": "/tmp/storage",
 		"database_dsn": "/dbname",
-		"enable_https": true
+		"enable_https": true,
+		"trusted_subnet": "192.168.0.1/24"
 	}`
 	jsonFile, err := os.CreateTemp("", "config.json")
 	assert.NoError(t, err)
@@ -132,6 +133,7 @@ func TestInitJSONConfig(t *testing.T) {
 		DataBaseDsn:     "/dbname",
 		EnableHTTPS:     true,
 		Config:          jsonFile.Name(),
+		TrustedSubnet:   "192.168.0.1/24",
 	}
 	if diff := cmp.Diff(wantConfig, actualConfig); diff != "" {
 		t.Errorf("Config mismatch (-expected +got):\n%s", diff)
@@ -146,6 +148,7 @@ func TestNewConfig(t *testing.T) {
 	_ = os.Setenv("DATABASE_DSN", "mocked_db_dsn")
 	_ = os.Setenv("PPROF_ENABLED", "true")
 	_ = os.Setenv("ENABLE_HTTPS", "true")
+	_ = os.Setenv("TRUSTED_SUBNET", "mocket_subnet")
 
 	jsonFile, err := os.CreateTemp("", "config.json")
 	assert.NoError(t, err)
@@ -153,14 +156,15 @@ func TestNewConfig(t *testing.T) {
 	_ = os.Setenv("CONFIG", jsonFile.Name())
 	defer os.Remove(jsonFile.Name())
 
-	os.Args = []string{"cmd", "-a", "mocked_address_cmd", "-b", "mocked_base_url_cmd", "-f", "mocked_file_path_cmd", "-d", "mocked_db_dsn_cmd", "-pprof", "-s"}
+	os.Args = []string{"cmd", "-a", "mocked_address_cmd", "-b", "mocked_base_url_cmd", "-f", "mocked_file_path_cmd", "-d", "mocked_db_dsn_cmd", "-pprof", "-s", "-t", "mock_subnet_cmd"}
 
 	jsonConfig := `{
 		"server_address": "localhost:8080",
 		"base_url": "http://localhost:8080",
 		"file_storage_path": "/tmp/storage",
 		"database_dsn": "/dbname",
-		"enable_https": true
+		"enable_https": true,
+		"trusted_subnet": "192.168.0.1/24"
 	}`
 
 	_, err = jsonFile.WriteString(jsonConfig)
@@ -179,6 +183,7 @@ func TestNewConfig(t *testing.T) {
 		PprofEnabled:    true,
 		EnableHTTPS:     true,
 		Config:          jsonFile.Name(),
+		TrustedSubnet:   "mocket_subnet",
 	}
 	if diff := cmp.Diff(wantConfig, actualConfig); diff != "" {
 		t.Errorf("Config mismatch (-expected +got):\n%s", diff)

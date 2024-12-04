@@ -30,6 +30,5 @@ exclude:
     - ^tools/*
     - ^internal/linter/testdata/*
     - ^db/*
-    - ^internal/app/storage/mocks/*
     - ^internal/app/storage/models/*
     - ^swagger/*

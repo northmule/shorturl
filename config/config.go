@@ -41,6 +41,8 @@ type Config struct {
 	EnableHTTPS bool `env:"ENABLE_HTTPS"`
 	// Путь к файлу конфигурации приложения
 	Config string `env:"CONFIG"`
+	// Доверенная сеть
+	TrustedSubnet string `env:"TRUSTED_SUBNET"`
 }
 
 // ConfigurationFile Структура файла конфигурацииы
@@ -55,6 +57,8 @@ type ConfigurationFile struct {
 	DatabaseDSN string `json:"database_dsn"`
 	// EnableHTTPS аналог переменной окружения ENABLE_HTTPS или флага -s
 	EnableHTTPS bool `json:"enable_https"`
+	// Доверенная сеть
+	TrustedSubnet string `json:"trusted_subnet"`
 }
 
 // InitConfig инициализация настроек приложения.
@@ -130,6 +134,7 @@ func initFlagConfig(appConfig *Config) error {
 
 	flagFileConfigShortApp := configFlag.String("c", "", "the path to the application configuration file")
 	flagFileConfigFullApp := configFlag.String("config", "", "the path to the application configuration file")
+	flagFileConfigTrustedSubnet := configFlag.String("t", "", "trusted network")
 
 	err := configFlag.Parse(os.Args[1:])
 	if err != nil {
@@ -162,6 +167,10 @@ func initFlagConfig(appConfig *Config) error {
 
 	if appConfig.Config == "" {
 		appConfig.Config = flagFileConfigApp
+	}
+
+	if *flagFileConfigTrustedSubnet == "" {
+		appConfig.TrustedSubnet = *flagFileConfigTrustedSubnet
 	}
 
 	appConfig.DataBaseDsn = strings.ReplaceAll(appConfig.DataBaseDsn, "\"", "")
