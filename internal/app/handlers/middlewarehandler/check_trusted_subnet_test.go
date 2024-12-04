@@ -1,6 +1,7 @@
 package middlewarehandler
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,7 +28,7 @@ func TestGrantAccess_NoTrustedSubnet(t *testing.T) {
 
 	middleware.GrantAccess(next).ServeHTTP(res, req)
 
-	assert.Equal(t, http.StatusForbidden, res.Code)
+	assert.Equal(t, http.StatusForbidden, res.Code, fmt.Sprintf("Expected: %d, actual: %d", http.StatusForbidden, res.Code))
 }
 
 func TestGrantAccess_InvalidCIDR(t *testing.T) {
@@ -46,7 +47,7 @@ func TestGrantAccess_InvalidCIDR(t *testing.T) {
 
 	middleware.GrantAccess(next).ServeHTTP(res, req)
 
-	assert.Equal(t, http.StatusForbidden, res.Code)
+	assert.Equal(t, http.StatusForbidden, res.Code, fmt.Sprintf("Expected: %d, actual: %d", http.StatusForbidden, res.Code))
 }
 
 func TestGrantAccess_IPNotProvided(t *testing.T) {
@@ -65,7 +66,7 @@ func TestGrantAccess_IPNotProvided(t *testing.T) {
 
 	middleware.GrantAccess(next).ServeHTTP(res, req)
 
-	assert.Equal(t, http.StatusForbidden, res.Code)
+	assert.Equal(t, http.StatusForbidden, res.Code, fmt.Sprintf("Expected: %d, actual: %d", http.StatusForbidden, res.Code))
 }
 
 func TestGrantAccess_IPNotInSubnet(t *testing.T) {
@@ -85,7 +86,7 @@ func TestGrantAccess_IPNotInSubnet(t *testing.T) {
 
 	middleware.GrantAccess(next).ServeHTTP(res, req)
 
-	assert.Equal(t, http.StatusForbidden, res.Code)
+	assert.Equal(t, http.StatusForbidden, res.Code, fmt.Sprintf("Expected: %d, actual: %d", http.StatusForbidden, res.Code))
 }
 
 func TestGrantAccess_IPInSubnet(t *testing.T) {
@@ -106,7 +107,7 @@ func TestGrantAccess_IPInSubnet(t *testing.T) {
 
 	middleware.GrantAccess(next).ServeHTTP(res, req)
 
-	assert.Equal(t, http.StatusOK, res.Code)
+	assert.Equal(t, http.StatusOK, res.Code, fmt.Sprintf("Expected: %d, actual: %d", http.StatusOK, res.Code))
 }
 
 func TestGrantAccess_IPEqual(t *testing.T) {
@@ -127,5 +128,5 @@ func TestGrantAccess_IPEqual(t *testing.T) {
 
 	middleware.GrantAccess(next).ServeHTTP(res, req)
 
-	assert.Equal(t, http.StatusOK, res.Code)
+	assert.Equal(t, http.StatusOK, res.Code, fmt.Sprintf("Expected: %d, actual: %d", http.StatusOK, res.Code))
 }

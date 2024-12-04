@@ -80,13 +80,13 @@ func TestStatsHandler_ViewStats(t *testing.T) {
 
 	_ = logger.InitLogger("fatal")
 
-	stor := storage.NewMemoryStorage()
-	shortURLService := url.NewShortURLService(stor, stor)
+	store := storage.NewMemoryStorage()
+	shortURLService := url.NewShortURLService(store, store)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
 	}()
-	ts := httptest.NewServer(NewRoutes(shortURLService, stor, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
+	ts := httptest.NewServer(NewRoutes(shortURLService, store, storage.NewSessionStorage(), workers.NewWorker(memoryStorage, stop)).Init())
 	defer ts.Close()
 
 	for _, tt := range tests {

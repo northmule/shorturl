@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/northmule/shorturl/internal/app/logger"
 )
 
 // StatsHandler обработка запросов статистики
@@ -37,25 +39,29 @@ func (s *StatsHandler) ViewStats(res http.ResponseWriter, req *http.Request) {
 	var responseView ResponseViewStats
 	responseView.Users, err = s.finderStats.GetCountUser()
 	if err != nil {
-		http.Error(res, "error GetCountUser()", http.StatusInternalServerError)
+		logger.LogSugar.Error("error GetCountUser()")
+		http.Error(res, "error", http.StatusInternalServerError)
 		return
 	}
 	responseView.Urls, err = s.finderStats.GetCountShortURL()
 	if err != nil {
-		http.Error(res, "error GetCountShortURL()", http.StatusInternalServerError)
+		logger.LogSugar.Error("error GetCountShortURL()")
+		http.Error(res, "error", http.StatusInternalServerError)
 		return
 	}
 
 	responseBytes, err := json.Marshal(responseView)
 	if err != nil {
-		http.Error(res, "error json marshal response", http.StatusInternalServerError)
+		logger.LogSugar.Error("error json marshal response")
+		http.Error(res, "error", http.StatusInternalServerError)
 		return
 	}
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(http.StatusOK)
 	_, err = res.Write(responseBytes)
 	if err != nil {
-		http.Error(res, "error write data", http.StatusInternalServerError)
+		logger.LogSugar.Error("error write data")
+		http.Error(res, "error write", http.StatusInternalServerError)
 		return
 	}
 }

@@ -28,7 +28,6 @@ type CheckAuth struct {
 
 // NewCheckAuth конструктор структуры.
 func NewCheckAuth(userCreator middlewarehandler.UserCreator, session storage.SessionAdapter) *CheckAuth {
-
 	return &CheckAuth{
 		userCreator:                       userCreator,
 		session:                           session,
@@ -50,22 +49,22 @@ func (c *CheckAuth) AuthEveryone(ctx context.Context, req interface{}, info *grp
 	if authorizationToken == "" {
 		userUUID = uuid.NewString()
 		token, _ := auntificator.GenerateToken(userUUID, auntificator.HMACTokenExp, auntificator.HMACSecretKey)
-		logger.LogSugar.Infof("Куки не переданы, создаю нового пользователя с uuid %s", userUUID)
+		logger.LogSugar.Infof("Cookies have not been transferred, I am creating a new user with a uuid %s", userUUID)
 		c.createUser(userUUID)
 
 		ctx = utils.AppendMData(ctx, metadata.Authorization, fmt.Sprintf("%s:%s", token, userUUID))
 	} else {
 		cookieValues := strings.Split(authorizationToken, ":")
 		if len(cookieValues) < 2 {
-			logger.LogSugar.Infof("UUID пользователя в куке не найден %s", authorizationToken)
+			logger.LogSugar.Infof("The user's UID was not found in the cookie %s", authorizationToken)
 			return nil, status.Error(codes.Unauthenticated, "missing user token")
 		}
 		cookieToken := cookieValues[0]
 		userUUID = cookieValues[1]
-		logger.LogSugar.Infof("Нашёл куки для пользователя с uuid %s", userUUID)
+		logger.LogSugar.Infof("I found cookies for a user with a uuid %s", userUUID)
 		if !auntificator.ValidateToken(userUUID, cookieToken, auntificator.HMACSecretKey) {
 			userUUID = uuid.NewString()
-			logger.LogSugar.Infof("Токен не прошёл валидацию для пользователя с uuid %s. Создаю нового пользователя", userUUID)
+			logger.LogSugar.Infof("The token failed validation for the user with uuid %s. Creating a new user", userUUID)
 			token, _ := auntificator.GenerateToken(userUUID, auntificator.HMACTokenExp, auntificator.HMACSecretKey)
 
 			ctx = utils.AppendMData(ctx, metadata.Authorization, fmt.Sprintf("%s:%s", token, userUUID))
@@ -90,7 +89,7 @@ func (c *CheckAuth) AccessVerificationUserUrls(ctx context.Context, req interfac
 	authorizationToken := utils.GetUserToken(ctx)
 
 	if authorizationToken == "" {
-		logger.LogSugar.Infof("UUID пользователя в куке не найден %s при запросе /api/user/urls", authorizationToken)
+		logger.LogSugar.Infof("The user's UUID was not found in the cookie %s when requesting /api/user/urls", authorizationToken)
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 

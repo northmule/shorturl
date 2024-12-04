@@ -35,7 +35,7 @@ func (c *CheckTrustedSubnet) GrantAccess(ctx context.Context, req interface{}, i
 
 	var err error
 	if c.configApp.TrustedSubnet == "" {
-		logger.LogSugar.Infof("доверенная сеть не заданна, доступ ограничен")
+		logger.LogSugar.Infof("trusted network is not set, access is limited")
 		return nil, status.Error(codes.Unauthenticated, "missing TrustedSubnet")
 	}
 
@@ -55,13 +55,13 @@ func (c *CheckTrustedSubnet) GrantAccess(ctx context.Context, req interface{}, i
 
 	actualIP = net.ParseIP(mdValues[0])
 	if actualIP == nil {
-		logger.LogSugar.Infof("не передан IP адрес, доступ ограничен")
+		logger.LogSugar.Infof("no IP address has been transmitted, access is restricted")
 		return nil, status.Error(codes.Unauthenticated, "missing X-Real-IP")
 	}
 
 	expectedIP, expectedNet, err = net.ParseCIDR(c.configApp.TrustedSubnet)
 	if err != nil {
-		logger.LogSugar.Infof("адрес конфигурации не распознан, доступ ограничен")
+		logger.LogSugar.Infof("the configuration address is not recognized, access is limited")
 		return nil, status.Error(codes.Unauthenticated, "missing CIDR")
 	}
 
@@ -70,7 +70,7 @@ func (c *CheckTrustedSubnet) GrantAccess(ctx context.Context, req interface{}, i
 	}
 
 	if ok := expectedNet.Contains(actualIP); !ok {
-		logger.LogSugar.Infof("адрес не является разрешённым, доступ ограничен")
+		logger.LogSugar.Infof("the address is not allowed, access is limited")
 		return nil, status.Error(codes.Unauthenticated, "missing expected IP")
 	}
 

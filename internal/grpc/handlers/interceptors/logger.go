@@ -29,7 +29,7 @@ func NewLogger(l Info) *Logger {
 // LogStart начало запроса
 func (l *Logger) LogStart(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	ctx = utils.AppendMData(ctx, mData.RequestTime, time.Now().String())
-	l.l.Infof("Запрос: %s", info.FullMethod)
+	l.l.Infof("Request: %s", info.FullMethod)
 	l.l.Infof("Req: %v", req)
 	l.l.Infof("Ctx: %v", ctx)
 	return handler(ctx, req)
@@ -37,7 +37,7 @@ func (l *Logger) LogStart(ctx context.Context, req interface{}, info *grpc.Unary
 
 // LogEnd конец запроса
 func (l *Logger) LogEnd(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	l.l.Infof("Обработка запрос: %s завершена", info.FullMethod)
+	l.l.Infof("Request processing: %s completed", info.FullMethod)
 
 	md, _ := metadata.FromIncomingContext(ctx)
 	mdValues := md.Get(mData.RequestTime)

@@ -25,7 +25,7 @@ func (c *CheckTrustedSubnet) GrantAccess(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		var err error
 		if c.configApp.TrustedSubnet == "" {
-			logger.LogSugar.Infof("доверенная сеть не заданна, доступ ограничен")
+			logger.LogSugar.Warn("trusted network is not set, access is limited")
 			res.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -36,14 +36,14 @@ func (c *CheckTrustedSubnet) GrantAccess(next http.Handler) http.Handler {
 
 		actualIP = net.ParseIP(req.Header.Get("X-Real-IP"))
 		if actualIP == nil {
-			logger.LogSugar.Infof("не передан IP адрес, доступ ограничен")
+			logger.LogSugar.Warn("no IP address has been transmitted, access is restricted")
 			res.WriteHeader(http.StatusForbidden)
 			return
 		}
 
 		expectedIP, expectedNet, err = net.ParseCIDR(c.configApp.TrustedSubnet)
 		if err != nil {
-			logger.LogSugar.Infof("адрес конфигурации не распознан, доступ ограничен")
+			logger.LogSugar.Warn("the configuration address is not recognized, access is limited")
 			res.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -53,7 +53,7 @@ func (c *CheckTrustedSubnet) GrantAccess(next http.Handler) http.Handler {
 		}
 
 		if ok := expectedNet.Contains(actualIP); !ok {
-			logger.LogSugar.Infof("адрес не является разрешённым, доступ ограничен")
+			logger.LogSugar.Warn("the address is not allowed, access is limited")
 			res.WriteHeader(http.StatusForbidden)
 			return
 		}
