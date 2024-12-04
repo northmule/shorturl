@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.12.4
-// source: internal/grpc/proto/ping.proto
+// source: shorturl/ping.proto
 
 package contract
 
@@ -118,5 +118,5 @@ var PingHandler_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "internal/grpc/proto/ping.proto",
+	Metadata: "shorturl/ping.proto",
 }

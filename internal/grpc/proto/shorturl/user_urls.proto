@@ -4,6 +4,7 @@ package contract;
 
 option go_package = "contract/";
 import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
 
 message ViewResponse {
   message Item {
@@ -18,6 +19,14 @@ message DeleteRequest {
 }
 
 service UserUrlsHandler {
-  rpc View(google.protobuf.Empty) returns (ViewResponse);
-  rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+  rpc View(google.protobuf.Empty) returns (ViewResponse) {
+    option (google.api.http) = {
+      get: "/api/user/urls"
+    };
+  };
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/user/urls"
+    };
+  };
 }

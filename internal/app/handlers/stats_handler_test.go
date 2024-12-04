@@ -92,7 +92,7 @@ func TestStatsHandler_ViewStats(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := NewStatsHandler(tt.finder)
-			req, err := http.NewRequest(http.MethodGet, ts.URL+statsURI, nil)
+			req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/internal/stats", nil)
 			if err != nil {
 				t.Error(err)
 			}

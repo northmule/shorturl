@@ -34,11 +34,6 @@ func NewRoutes(shortURLService *url.ShortURLService, storage storage.StorageQuer
 	}
 }
 
-const (
-	statsURI   = "/api/internal/stats"
-	userURLURI = "/api/user/urls"
-)
-
 // Init создаёт маршруты.
 func (routes *Routes) Init() chi.Router {
 	r := chi.NewRouter()
@@ -75,16 +70,16 @@ func (routes *Routes) Init() chi.Router {
 	r.With(
 		checkAuth.AccessVerificationUserUrls,
 		checkAuth.AuthEveryone,
-	).Get(userURLURI, userUrlsHandler.View)
+	).Get("/api/user/urls", userUrlsHandler.View)
 
 	r.With(
 		checkAuth.AccessVerificationUserUrls,
 		checkAuth.AuthEveryone,
-	).Delete(userURLURI, userUrlsHandler.Delete)
+	).Delete("/api/user/urls", userUrlsHandler.Delete)
 
 	r.With(
 		checkTrustedSubnet.GrantAccess,
-	).Get(statsURI, statsHandler.ViewStats)
+	).Get("/api/internal/stats", statsHandler.ViewStats)
 
 	return r
 }

@@ -4,6 +4,7 @@ package contract;
 
 option go_package = "contract/";
 import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
 
 
 message StatsResponse {
@@ -12,5 +13,9 @@ message StatsResponse {
 }
 
 service StatsHandler {
-  rpc Stats(google.protobuf.Empty) returns (StatsResponse);
+  rpc Stats(google.protobuf.Empty) returns (StatsResponse) {
+    option (google.api.http) = {
+      get: "/api/internal/stats"
+    };
+  };
 }

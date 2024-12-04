@@ -4,6 +4,8 @@ package contract;
 
 option go_package = "contract/";
 
+import "google/api/annotations.proto";
+
 message RedirectRequest {
    string id = 1;
 }
@@ -13,5 +15,9 @@ message RedirectResponse {
 }
 
 service RedirectHandler {
-  rpc Redirect(RedirectRequest) returns (RedirectResponse);
+  rpc Redirect(RedirectRequest) returns (RedirectResponse){
+    option (google.api.http) = {
+      get: "/{id}"
+    };
+  }
 }

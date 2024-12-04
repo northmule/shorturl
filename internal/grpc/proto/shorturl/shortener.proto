@@ -4,6 +4,8 @@ package contract;
 
 option go_package = "contract/";
 
+import "google/api/annotations.proto";
+
 message ShortenerRequest {
   string url = 1;
 }
@@ -36,7 +38,22 @@ message ShortenerBatchResponse {
 }
 
 service ShortenerHandler {
-  rpc Shortener(ShortenerRequest) returns (ShortenerResponse);
-  rpc ShortenerJSON(ShortenerJSONRequest) returns (ShortenerJSONResponse);
-  rpc ShortenerBatch(ShortenerBatchRequest) returns (ShortenerBatchResponse);
+  rpc Shortener(ShortenerRequest) returns (ShortenerResponse) {
+    option (google.api.http) = {
+      post: "/",
+      body: "*",
+    };
+  };
+  rpc ShortenerJSON(ShortenerJSONRequest) returns (ShortenerJSONResponse) {
+    option (google.api.http) = {
+      post: "/api/shorten",
+      body: "*",
+    };
+  };
+  rpc ShortenerBatch(ShortenerBatchRequest) returns (ShortenerBatchResponse) {
+    option (google.api.http) = {
+      post: "/api/shorten/batch",
+      body: "*",
+    };
+  };
 }
