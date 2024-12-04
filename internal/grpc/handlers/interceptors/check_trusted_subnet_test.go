@@ -35,9 +35,11 @@ func TestGrantAccess(t *testing.T) {
 				TrustedSubnet: "",
 			},
 			code:    codes.Unauthenticated,
-			message: "missing TrustedSubnet",
+			message: "no access",
 			ctx: func() context.Context {
-				return context.Background()
+				md := metadata.New(map[string]string{"X-Real-IP": "192.168.1.199"})
+				ctx := metadata.NewIncomingContext(context.Background(), md)
+				return ctx
 			},
 		},
 		{

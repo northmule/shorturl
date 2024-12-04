@@ -2,10 +2,9 @@ package interceptors
 
 import (
 	"context"
-	"net"
 
 	"github.com/northmule/shorturl/config"
-	"github.com/northmule/shorturl/internal/app/logger"
+	"github.com/northmule/shorturl/internal/app/services/auntificator"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -34,14 +33,6 @@ func (c *CheckTrustedSubnet) GrantAccess(ctx context.Context, req interface{}, i
 	}
 
 	var err error
-	if c.configApp.TrustedSubnet == "" {
-		logger.LogSugar.Infof("trusted network is not set, access is limited")
-		return nil, status.Error(codes.Unauthenticated, "missing TrustedSubnet")
-	}
-
-	var expectedIP net.IP
-	var actualIP net.IP
-	var expectedNet *net.IPNet
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -53,25 +44,10 @@ func (c *CheckTrustedSubnet) GrantAccess(ctx context.Context, req interface{}, i
 		return nil, status.Error(codes.Unauthenticated, "missing metadata")
 	}
 
-	actualIP = net.ParseIP(mdValues[0])
-	if actualIP == nil {
-		logger.LogSugar.Infof("no IP address has been transmitted, access is restricted")
-		return nil, status.Error(codes.Unauthenticated, "missing X-Real-IP")
-	}
-
-	expectedIP, expectedNet, err = net.ParseCIDR(c.configApp.TrustedSubnet)
+	trustedService := auntificator.NewTrustedSubnet(c.configApp)
+	err = trustedService.GrantAccess(mdValues[0])
 	if err != nil {
-		logger.LogSugar.Infof("the configuration address is not recognized, access is limited")
-		return nil, status.Error(codes.Unauthenticated, "missing CIDR")
-	}
-
-	if ok := expectedIP.Equal(actualIP); ok {
-		return handler(ctx, req)
-	}
-
-	if ok := expectedNet.Contains(actualIP); !ok {
-		logger.LogSugar.Infof("the address is not allowed, access is limited")
-		return nil, status.Error(codes.Unauthenticated, "missing expected IP")
+		return nil, status.Error(codes.Unauthenticated, "no access")
 	}
 
 	return handler(ctx, req)
