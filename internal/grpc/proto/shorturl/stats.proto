@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package contract;
+
+option go_package = "contract/";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+
+message StatsResponse {
+  int64 urls = 1;
+  int64 users = 2;
+}
+
+service StatsHandler {
+  rpc Stats(google.protobuf.Empty) returns (StatsResponse) {
+    option (google.api.http) = {
+      get: "/api/internal/stats"
+    };
+  };
+}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
 	"github.com/northmule/shorturl/internal/app/workers"
@@ -12,6 +13,8 @@ type RoutesBuilder struct {
 	sessionStorage  storage.SessionAdapter
 	worker          *workers.Worker
 	storage         storage.StorageQuery
+	finderStats     StatsFinder
+	configApp       *config.Config
 }
 
 // Builder строитель.
@@ -21,6 +24,8 @@ type Builder interface {
 	SetWorker(*workers.Worker)
 	SetStorage(storage.StorageQuery)
 	GetAppRoutes() *Routes
+	SetFinderStats(finderStats StatsFinder)
+	SetConfigApp(configApp *config.Config)
 }
 
 // NewRoutesBuilder конструктор.
@@ -60,5 +65,17 @@ func (r *RoutesBuilder) GetAppRoutes() *Routes {
 		sessionStorage:  r.sessionStorage,
 		worker:          r.worker,
 		storage:         r.storage,
+		finderStats:     r.finderStats,
+		configApp:       r.configApp,
 	}
+}
+
+// SetFinderStats finder статистики сервиса
+func (r *RoutesBuilder) SetFinderStats(finderStats StatsFinder) {
+	r.finderStats = finderStats
+}
+
+// SetConfigApp конфигурация приложения
+func (r *RoutesBuilder) SetConfigApp(configApp *config.Config) {
+	r.configApp = configApp
 }

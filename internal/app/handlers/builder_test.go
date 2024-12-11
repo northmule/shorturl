@@ -3,6 +3,7 @@ package handlers
 import (
 	"testing"
 
+	"github.com/northmule/shorturl/config"
 	"github.com/northmule/shorturl/internal/app/logger"
 	"github.com/northmule/shorturl/internal/app/services/url"
 	"github.com/northmule/shorturl/internal/app/storage"
@@ -45,8 +46,27 @@ func TestRoutesBuilder_SetStorage(t *testing.T) {
 	}
 }
 
+func TestRoutesBuilder_SetFinderStats(t *testing.T) {
+	builder := NewRoutesBuilder()
+	store := storage.NewMemoryStorage()
+	builder.SetFinderStats(store)
+	if builder.finderStats != store {
+		t.Errorf("Expected finderStats to be %v, but got %v", store, builder.finderStats)
+	}
+}
+
+func TestRoutesBuilder_SetConfigApp(t *testing.T) {
+	builder := NewRoutesBuilder()
+	cfg := new(config.Config)
+	builder.SetConfigApp(cfg)
+	if builder.configApp != cfg {
+		t.Errorf("Expected configApp to be %v, but got %v", cfg, builder.configApp)
+	}
+}
+
 func TestRoutesBuilder_GetAppRoutes(t *testing.T) {
 	logger.InitLogger("fatal")
+	cfg := new(config.Config)
 	stop := make(chan struct{})
 	defer func() {
 		stop <- struct{}{}
@@ -61,6 +81,8 @@ func TestRoutesBuilder_GetAppRoutes(t *testing.T) {
 	builder.SetSessionStorage(sessionStore)
 	builder.SetWorker(worker)
 	builder.SetStorage(store)
+	builder.SetFinderStats(store)
+	builder.SetConfigApp(cfg)
 
 	routes := builder.GetAppRoutes()
 
@@ -75,5 +97,11 @@ func TestRoutesBuilder_GetAppRoutes(t *testing.T) {
 	}
 	if routes.storage == nil {
 		t.Errorf("Expected storage to be %v, but got %v", store, routes.storage)
+	}
+	if routes.finderStats == nil {
+		t.Errorf("Expected finderStats to be %v, but got %v", store, routes.finderStats)
+	}
+	if routes.configApp == nil {
+		t.Errorf("Expected configApp to be %v, but got %v", cfg, routes.configApp)
 	}
 }
